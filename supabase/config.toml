@@ -1,0 +1,4 @@
+project_id = "thvywuyawfmbbtasmlxb"
+
+[functions.colorize-surface]
+verify_jwt = false
