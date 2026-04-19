@@ -1,81 +1,60 @@
-import React from 'react';
-import { Wind, Flame, ShieldAlert, Baby, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Shield, Eye, Hand } from "lucide-react";
 
-export const PrecautionsSection: React.FC = () => {
-  const precautions = [
-    {
-      title: 'Uso de mascarilla',
-      description: 'Utiliza protección respiratoria adecuada para evitar la inhalación de vapores tóxicos o polvos finos.',
-      icon: ShieldAlert,
-    },
-    {
-      title: 'Ventilación adecuada',
-      description: 'Asegúrate de aplicar en espacios abiertos o mantener un flujo de aire constante en interiores.',
-      icon: Wind,
-    },
-    {
-      title: 'Fuera del alcance',
-      description: 'Mantén este producto, solventes y herramientas alejados de niños pequeños y mascotas.',
-      icon: Baby,
-    },
-    {
-      title: 'Líquido inflamable',
-      description: 'Evita estrictamente la exposición al calor excesivo, chispas o llamas abiertas durante su uso.',
-      icon: Flame,
-    }
-  ];
+interface PrecautionsSectionProps {
+  precautions: string[];
+  productName: string;
+}
+
+const getIcon = (precaution: string) => {
+  const lower = precaution.toLowerCase();
+  if (lower.includes("guante") || lower.includes("mano")) {
+    return <Hand className="w-4 h-4" />;
+  }
+  if (lower.includes("lente") || lower.includes("ojo") || lower.includes("visual")) {
+    return <Eye className="w-4 h-4" />;
+  }
+  if (lower.includes("mascara") || lower.includes("respirador") || lower.includes("ventilación")) {
+    return <Shield className="w-4 h-4" />;
+  }
+  return <AlertTriangle className="w-4 h-4" />;
+};
+
+export function PrecautionsSection({ precautions, productName }: PrecautionsSectionProps) {
+  if (!precautions || precautions.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Contenedor principal con fondo de advertencia suave */}
-      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-3xl p-6 lg:p-10 shadow-sm transition-all duration-300">
-        
-        {/* Header de la sección */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-amber-100 dark:bg-amber-900/50 rounded-xl text-amber-600 dark:text-amber-500 mt-1 shadow-inner">
-              <AlertTriangle size={28} />
-            </div>
-            <div>
-              <h2 className="text-2xl lg:text-3xl font-bold text-amber-900 dark:text-amber-500 mb-2">
-                Precauciones de Uso
-              </h2>
-              <p className="text-amber-800/70 dark:text-amber-400/70 text-sm max-w-2xl font-medium">
-                Tu seguridad es primero. Sigue estas recomendaciones estándar de la industria al aplicar pinturas para prevenir accidentes o problemas de salud.
-              </p>
-            </div>
-          </div>
+    <div className="bg-wine/5 border border-wine/20 rounded-2xl p-6 space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-wine/10 flex items-center justify-center">
+          <AlertTriangle className="w-5 h-5 text-wine" />
         </div>
-
-        {/* Grid de tarjetas de precauciones */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {precautions.map((item, idx) => {
-            const Icon = item.icon;
-            return (
-              <div 
-                key={idx}
-                className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-2xl p-6 border border-amber-100 dark:border-amber-900/30 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden"
-              >
-                {/* Acento decorativo superior */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-amber-200 dark:bg-amber-800/50 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
-                
-                <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-500 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/60">
-                  <Icon size={24} />
-                </div>
-                
-                <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-100 mb-2">
-                  {item.title}
-                </h3>
-                
-                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">
-                  {item.description}
-                </p>
-              </div>
-            );
-          })}
+        <div>
+          <h3 className="font-semibold text-lg text-wine">Precauciones de Aplicación</h3>
+          <p className="text-sm text-muted-foreground">
+            Para el uso seguro de <span className="font-medium">{productName}</span>
+          </p>
         </div>
-
       </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        {precautions.map((precaution, index) => (
+          <div
+            key={index}
+            className="flex items-start gap-3 bg-background/50 rounded-xl p-4 border border-wine/10"
+          >
+            <div className="w-8 h-8 rounded-lg bg-wine/10 flex items-center justify-center flex-shrink-0 text-wine">
+              {getIcon(precaution)}
+            </div>
+            <p className="text-sm text-foreground">{precaution}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-xs text-muted-foreground pt-2 border-t border-wine/10">
+        ⚠️ Siempre lea las instrucciones completas en la etiqueta del producto antes de su uso.
+      </p>
     </div>
   );
-};
+}
