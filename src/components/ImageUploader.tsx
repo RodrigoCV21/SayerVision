@@ -8,7 +8,7 @@ interface ImageUploaderProps {
 }
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/bmp", "image/tiff"];
-const ALLOWED_EXTENSIONS = ".jpg,.jpeg,.png,.webp,.bmp,.tiff";
+const ALLOWED_EXTENSIONS = "image/jpeg, image/png, image/webp, image/bmp, image/tiff, .jpg, .jpeg, .png, .webp, .bmp, .tiff";
 const MAX_SIZE_MB = 10;
 
 export function ImageUploader({ onImageSelect, currentImage, onClear }: ImageUploaderProps) {
