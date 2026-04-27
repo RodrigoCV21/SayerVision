@@ -1,206 +1,309 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Upload, Save, AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { ChevronDown, ChevronUp, Save, Loader2, Zap } from "lucide-react";
+import type { Product, ProductInput } from "@/hooks/useProducts";
 
-const productSchema = z.object({
-  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
-  price: z.coerce.number({ invalid_type_error: 'El precio debe ser un número' }).positive('El precio debe ser mayor a 0'),
-  colorCode: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Debe ser un código hexadecimal válido (ej. #FF0000)'),
-  link: z.string().url('Debe ser un enlace válido (ej. https://...)'),
-  image: z.any().refine((files) => files?.length > 0, 'La imagen es obligatoria')
-});
+interface ProductFormProps {
+  initialData?: Product;
+  products: Product[];
+  onSubmit: (input: ProductInput) => Promise<void>;
+  onCancel: () => void;
+}
 
-type ProductFormValues = z.infer<typeof productSchema>;
+const CATEGORIES = [
+  "Línea para Madera",
+  "Línea para Metales",
+  "Línea Arquitectónica",
+  "Especialidades y Tráfico",
+  "Impermeabilizantes",
+];
 
-export const ProductForm: React.FC = () => {
-  const [preview, setPreview] = useState<string | null>(null);
+const PRESET_FEATURES = [
+  "Alto rendimiento", "Secado rápido", "Lavable", "Antihongos", "Antibacterial",
+  "Anticorrosivo", "Resistente al agua", "Resistente a la intemperie",
+  "Resistente a la abrasión", "Elastomérico", "Bajo olor", "Base agua",
+  "Base solvente", "Acabado mate", "Acabado satinado", "Acabado brillante",
+];
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    watch
-  } = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
-  });
+const PRESET_SURFACES = [
+  // Madera
+  "madera-interior", "madera-exterior", "muebles-madera", "puertas-madera", "pisos-madera",
+  // Metal
+  "metal-ferroso", "metal-galvanizado", "aluminio", "herreria", "tanques-tuberias", "estructuras-metalicas",
+  // Muro
+  "muro-interior", "muro-exterior", "concreto", "block", "tablaroca", "aplanado",
+  // Piso
+  "piso-exterior", "estacionamiento", "señalizacion", "canchas",
+  // Especial
+  "alberca", "azotea", "impermeabilizacion",
+];
 
-  const onSubmit = async (data: ProductFormValues) => {
-    // Aquí iría la lógica para enviar a tu API/backend (Supabase, etc.)
-    console.log('Datos enviados:', data);
-    alert('¡Producto validado y listo para guardar! (Revisa la consola)');
-  };
+const PRESET_CONDITIONS = [
+  "Uso interior", "Uso exterior", "Alta humedad", "Exposición directa al sol",
+  "Zonas costeras", "Lluvias frecuentes", "Temperaturas extremas",
+  "Ambiente industrial", "Tráfico peatonal", "Tráfico vehicular",
+];
 
-  // Manejar la vista previa de la imagen al seleccionarla
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+const PRESET_PRECAUTIONS = [
+  "Usar guantes", "Usar mascarilla", "Usar lentes de protección",
+  "Aplicar en área ventilada", "No fumar durante la aplicación",
+  "Mantener alejado del fuego", "No ingerir", "Mantener fuera del alcance de niños",
+  "Evitar contacto prolongado con la piel", "Aplicar sobre superficie seca",
+  "Aplicar entre 10°C y 35°C",
+];
+
+// Chip toggle component
+function ChipGroup({
+  options,
+  selected,
+  onChange,
+}: {
+  options: string[];
+  selected: string[];
+  onChange: (vals: string[]) => void;
+}) {
+  const toggle = (val: string) => {
+    if (selected.includes(val)) {
+      onChange(selected.filter((v) => v !== val));
     } else {
-      setPreview(null);
+      onChange([...selected, val]);
     }
   };
 
-  // Observar el campo de color para mostrar una muestra en vivo
-  const watchedColor = watch('colorCode');
-  const isValidHex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(watchedColor || '');
-
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 lg:p-8 bg-white dark:bg-zinc-900 rounded-3xl shadow-xl border border-zinc-200 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">Agregar Nuevo Producto</h2>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-          Completa los datos para registrar una nueva pintura en el catálogo.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        
-        {/* Nombre del Producto */}
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Nombre del Producto
-          </label>
-          <input
-            {...register('name')}
-            className={`w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
-              errors.name ? 'border-red-500 dark:border-red-500' : 'border-zinc-200 dark:border-zinc-700'
-            }`}
-            placeholder="Ej. Pintura Acrílica Premium"
-          />
-          {errors.name && (
-            <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-              <AlertCircle size={14} /> {errors.name.message}
-            </p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Precio */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Precio (MXN)
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">$</span>
-              <input
-                type="number"
-                step="0.01"
-                {...register('price')}
-                className={`w-full pl-8 pr-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
-                  errors.price ? 'border-red-500 dark:border-red-500' : 'border-zinc-200 dark:border-zinc-700'
-                }`}
-                placeholder="0.00"
-              />
-            </div>
-            {errors.price && (
-              <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle size={14} /> {errors.price.message}
-              </p>
-            )}
-          </div>
-
-          {/* Color Hexadecimal */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Código de Color (Hex)
-            </label>
-            <div className="relative flex items-center">
-              <input
-                {...register('colorCode')}
-                className={`w-full pl-4 pr-12 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
-                  errors.colorCode ? 'border-red-500 dark:border-red-500' : 'border-zinc-200 dark:border-zinc-700'
-                }`}
-                placeholder="#FF0000"
-              />
-              <div 
-                className="absolute right-3 w-6 h-6 rounded-md border border-zinc-200 dark:border-zinc-600 shadow-inner transition-colors duration-300"
-                style={{ backgroundColor: isValidHex ? watchedColor : 'transparent' }}
-              />
-            </div>
-            {errors.colorCode && (
-              <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle size={14} /> {errors.colorCode.message}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Enlace de Compra */}
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Enlace de Compra
-          </label>
-          <input
-            {...register('link')}
-            className={`w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
-              errors.link ? 'border-red-500 dark:border-red-500' : 'border-zinc-200 dark:border-zinc-700'
-            }`}
-            placeholder="https://tulugardecompra.com/producto"
-          />
-          {errors.link && (
-            <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-              <AlertCircle size={14} /> {errors.link.message}
-            </p>
-          )}
-        </div>
-
-        {/* Selector de Imagen */}
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Imagen del Producto
-          </label>
-          
-          <div className="flex items-center gap-6">
-            <div className={`flex-1 relative border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-colors hover:border-blue-500 bg-zinc-50 dark:bg-zinc-800/50 ${errors.image ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700'}`}>
-              <input
-                type="file"
-                accept="image/*"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                {...register('image', {
-                  onChange: handleImageChange
-                })}
-              />
-              <Upload className={`mb-2 ${errors.image ? 'text-red-400' : 'text-zinc-400'}`} size={28} />
-              <span className={`text-sm font-medium ${errors.image ? 'text-red-500' : 'text-zinc-600 dark:text-zinc-400'}`}>
-                Haz clic para subir imagen
-              </span>
-            </div>
-
-            {/* Vista Previa Mini */}
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 shadow-inner">
-              {preview ? (
-                <img src={preview} alt="Vista previa" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-xs text-zinc-400 text-center px-2">Sin imagen</span>
-              )}
-            </div>
-          </div>
-          {errors.image && (
-            <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-              <AlertCircle size={14} /> {errors.image.message as string}
-            </p>
-          )}
-        </div>
-
-        {/* Botón de Submit */}
-        <div className="pt-4">
+    <div className="flex flex-wrap gap-2 pt-3 pb-1">
+      {options.map((opt) => {
+        const active = selected.includes(opt);
+        return (
           <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+            key={opt}
+            type="button"
+            onClick={() => toggle(opt)}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-150 ${
+              active
+                ? "bg-accent text-accent-foreground border-accent shadow-sm"
+                : "bg-background text-muted-foreground border-border hover:border-accent/50 hover:text-foreground"
+            }`}
           >
-            <Save size={20} />
-            {isSubmitting ? 'Guardando producto...' : 'Guardar Producto'}
+            {opt}
           </button>
-        </div>
-
-      </form>
+        );
+      })}
     </div>
   );
-};
+}
+
+// Accordion section
+function Section({
+  title,
+  count,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  count: number;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border border-border rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
+      >
+        <span className="text-sm font-medium">
+          {title}
+          {count > 0 && (
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-accent/15 text-accent text-xs font-semibold">
+              {count}
+            </span>
+          )}
+        </span>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+      {open && <div className="px-4 pb-4 border-t border-border">{children}</div>}
+    </div>
+  );
+}
+
+export function ProductForm({ initialData, products, onSubmit, onCancel }: ProductFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [name, setName]           = useState(initialData?.name ?? "");
+  const [serie, setSerie]         = useState(initialData?.serie ?? "");
+  const [category, setCategory]   = useState(initialData?.category ?? CATEGORIES[2]);
+  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [features, setFeatures]   = useState<string[]>(initialData?.features ?? []);
+  const [surfaces, setSurfaces]   = useState<string[]>(initialData?.applicable_surfaces ?? []);
+  const [conditions, setConditions] = useState<string[]>(initialData?.environmental_conditions ?? []);
+  const [precautions, setPrecautions] = useState<string[]>(initialData?.precautions ?? []);
+  const [requiresPrimer, setRequiresPrimer] = useState(initialData?.requires_primer ?? false);
+  const [primerProductId, setPrimerProductId] = useState(initialData?.primer_product_id ?? "");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !category) return;
+    setIsSubmitting(true);
+    await onSubmit({
+      name: name.trim(),
+      serie: serie.trim() || undefined,
+      category,
+      description: description.trim() || undefined,
+      features,
+      applicable_surfaces: surfaces,
+      environmental_conditions: conditions,
+      precautions,
+      requires_primer: requiresPrimer,
+      primer_product_id: requiresPrimer && primerProductId ? primerProductId : undefined,
+    });
+    setIsSubmitting(false);
+  };
+
+  const otherProducts = products.filter((p) => p.id !== initialData?.id);
+
+  return (
+    <form onSubmit={handleSubmit} className="p-6 space-y-5">
+      {/* Nombre + Serie */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            Nombre del Producto <span className="text-destructive">*</span>
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="Ej: Esmalte Acrílico Sayer"
+            className="input-instruction"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Serie</label>
+          <input
+            value={serie}
+            onChange={(e) => setSerie(e.target.value)}
+            placeholder="Ej: V-00xx"
+            className="input-instruction"
+          />
+        </div>
+      </div>
+
+      {/* Categoría */}
+      <div>
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+          Categoría / Línea <span className="text-destructive">*</span>
+        </label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          required
+          className="input-instruction bg-secondary/30"
+        >
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Descripción adicional */}
+      <div>
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+          Descripción adicional{" "}
+          <span className="text-muted-foreground/60 font-normal">(opcional, para información extra)</span>
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          placeholder="Información adicional que no cubren las opciones predefinidas..."
+          className="input-instruction resize-none"
+        />
+      </div>
+
+      {/* Secciones IA */}
+      <div className="rounded-xl border-l-4 border-accent bg-accent/5 px-4 py-2 flex items-center gap-2">
+        <Zap className="w-4 h-4 text-accent flex-shrink-0" />
+        <p className="text-xs font-semibold text-accent">Importante para la recomendación de IA</p>
+      </div>
+
+      <div className="space-y-3">
+        <Section title="Superficies de Uso Aplicables" count={surfaces.length}>
+          <ChipGroup options={PRESET_SURFACES} selected={surfaces} onChange={setSurfaces} />
+        </Section>
+
+        <Section title="Características del Producto" count={features.length} defaultOpen={true}>
+          <ChipGroup options={PRESET_FEATURES} selected={features} onChange={setFeatures} />
+        </Section>
+
+        <Section title="Condiciones Ambientales" count={conditions.length}>
+          <ChipGroup options={PRESET_CONDITIONS} selected={conditions} onChange={setConditions} />
+        </Section>
+
+        <Section title="Precauciones de Aplicación" count={precautions.length}>
+          <ChipGroup options={PRESET_PRECAUTIONS} selected={precautions} onChange={setPrecautions} />
+        </Section>
+      </div>
+
+      {/* Requiere Primario */}
+      <div className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          id="requires_primer"
+          checked={requiresPrimer}
+          onChange={(e) => setRequiresPrimer(e.target.checked)}
+          className="w-4 h-4 accent-accent"
+        />
+        <label htmlFor="requires_primer" className="text-sm cursor-pointer select-none">
+          Este producto requiere primario/sellador
+        </label>
+      </div>
+
+      {requiresPrimer && otherProducts.length > 0 && (
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            Producto Primario
+          </label>
+          <select
+            value={primerProductId}
+            onChange={(e) => setPrimerProductId(e.target.value)}
+            className="input-instruction bg-secondary/30"
+          >
+            <option value="">— Seleccionar primario —</option>
+            {otherProducts.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} {p.serie ? `(${p.serie})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Acciones */}
+      <div className="flex gap-3 pt-2 border-t border-border">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 px-4 py-3 rounded-xl border border-border text-sm font-medium
+                     hover:bg-secondary transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting || !name.trim()}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+                     bg-accent text-accent-foreground text-sm font-semibold
+                     hover:bg-accent/90 transition-colors
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+          ) : (
+            <><Save className="w-4 h-4" /> {initialData ? "Actualizar Producto" : "Crear Producto"}</>
+          )}
+        </button>
+      </div>
+    </form>
+  );
+}
