@@ -12,7 +12,7 @@ const Index = () => {
   const [selectedColor, setSelectedColor] = useState<ColorOption | null>(null);
   const [instruction, setInstruction] = useState("");
 
-  const { colorize, isProcessing, error, resultImage, recommendation, reset } = useColorize();
+  const { colorize, isProcessing, error, resultImage, recommendations, reset } = useColorize();
 
   const handleProcess = async () => {
     if (!uploadedImage || !selectedColor || !instruction.trim()) return;
@@ -53,15 +53,15 @@ const Index = () => {
           <ResultPreview
             originalImage={uploadedImage}
             resultImage={resultImage}
-            recommendation={recommendation}
+            recommendations={recommendations}
             onReset={handleReset}
           />
 
           {/* Precautions Section */}
-          {recommendation?.product?.precautions && recommendation.product.precautions.length > 0 && (
+          {recommendations?.[0]?.product?.precautions && recommendations[0].product.precautions.length > 0 && (
             <PrecautionsSection
-              precautions={recommendation.product.precautions}
-              productName={recommendation.product.name}
+              precautions={recommendations[0].product.precautions}
+              productName={recommendations[0].product.name}
             />
           )}
         </div>

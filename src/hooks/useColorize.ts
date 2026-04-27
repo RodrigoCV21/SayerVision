@@ -30,7 +30,7 @@ interface ColorizeResult {
   imageUrl?: string;
   message?: string;
   error?: string;
-  recommendation?: Recommendation;
+  recommendations?: Recommendation[];
 }
 
 // Mapa de descripciones de color para enviar a la IA
@@ -55,7 +55,7 @@ export function useColorize() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultImage, setResultImage] = useState<string | null>(null);
-  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
 
   const colorize = async (
     imageBase64: string,
@@ -65,7 +65,7 @@ export function useColorize() {
     setIsProcessing(true);
     setError(null);
     setResultImage(null);
-    setRecommendation(null);
+    setRecommendations(null);
 
     // Enviamos la descripción real del color en lugar del ID
     // Así el backend acepta cualquier color sin necesitar redeploy
@@ -96,8 +96,8 @@ export function useColorize() {
 
       if (data?.success && data.imageUrl) {
         setResultImage(data.imageUrl);
-        if (data.recommendation) {
-          setRecommendation(data.recommendation);
+        if (data.recommendations) {
+          setRecommendations(data.recommendations);
         }
         return true;
       }
@@ -115,7 +115,7 @@ export function useColorize() {
   const reset = () => {
     setResultImage(null);
     setError(null);
-    setRecommendation(null);
+    setRecommendations(null);
   };
 
   return {
@@ -123,7 +123,7 @@ export function useColorize() {
     isProcessing,
     error,
     resultImage,
-    recommendation,
+    recommendations,
     reset,
   };
 }
