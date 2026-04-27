@@ -31,7 +31,7 @@ const Index = () => {
   // Show result view if we have a result
   if (resultImage && uploadedImage) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen" style={{ background: "linear-gradient(135deg, hsl(200 55% 90%) 0%, hsl(220 45% 94%) 35%, hsl(10 55% 90%) 70%, hsl(35 65% 93%) 100%)" }}>
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm">
           <div className="container max-w-5xl py-4 px-4 flex items-center justify-between">
@@ -70,7 +70,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, hsl(200 55% 90%) 0%, hsl(220 45% 94%) 35%, hsl(10 55% 90%) 70%, hsl(35 65% 93%) 100%)" }}>
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container max-w-5xl py-4 px-4 flex items-center justify-between">
@@ -109,7 +109,7 @@ const Index = () => {
           </div>
 
           {/* Main card */}
-          <div className="glass-card rounded-3xl p-6 md:p-8 space-y-8">
+          <div className="glass-card rounded-3xl p-6 md:p-8 space-y-8 shadow-2xl border border-white/40">
             {/* Step 1: Upload */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -138,11 +138,13 @@ const Index = () => {
                   type="text"
                   value={instruction}
                   onChange={(e) => setInstruction(e.target.value)}
-                  placeholder="Ej: la pared del fondo, el sofá, el carro..."
+                  placeholder="Ej: la pared de block del exterior, la puerta de metal oxidada..."
                   className="input-instruction"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Sé específico sobre qué superficie deseas cambiar de color
+                  💡 <strong>Consejo:</strong> Sé específico: menciona el material y la ubicación.
+                  Puedes describir <strong>varias características</strong> (ej: "pared de block del cuarto, con humedad").
+                  Solo superficies pintables: paredes, madera, metal, pisos, etc.
                 </p>
               </div>
             )}

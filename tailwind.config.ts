@@ -64,6 +64,19 @@ export default {
           DEFAULT: "hsl(var(--pastel-yellow))",
           light: "hsl(var(--pastel-yellow-light))",
         },
+        // Paint colors (hex direct)
+        paint: {
+          red:    "#CC2200",
+          blue:   "#1A3DAA",
+          yellow: "#F5C800",
+          white:  "#F5F5F0",
+          black:  "#1A1A1A",
+          gray:   "#7A7A7A",
+          beige:  "#D4B896",
+          orange: "#E8630A",
+          purple: "#7B2D8B",
+          sky:    "#5EB8DD",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

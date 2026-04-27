@@ -32,8 +32,8 @@
     --muted: 40 15% 96%;
     --muted-foreground: 220 10% 45%;
 
-    /* Accent - Warm copper/bronze for interactivity */
-    --accent: 25 70% 50%;
+    /* Accent - Blue-violet for interactivity */
+    --accent: 225 70% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -41,7 +41,7 @@
 
     --border: 40 15% 90%;
     --input: 40 15% 90%;
-    --ring: 25 70% 50%;
+    --ring: 225 70% 55%;
 
     --radius: 0.75rem;
 
@@ -83,7 +83,7 @@
     --muted: 220 15% 16%;
     --muted-foreground: 40 10% 55%;
 
-    --accent: 25 70% 55%;
+    --accent: 225 70% 65%;
     --accent-foreground: 220 20% 8%;
 
     --destructive: 0 72% 45%;
@@ -91,7 +91,7 @@
 
     --border: 220 15% 20%;
     --input: 220 15% 20%;
-    --ring: 25 70% 55%;
+    --ring: 225 70% 65%;
 
     --glass-bg: 220 20% 12% / 0.7;
     --glass-border: 0 0% 100% / 0.1;
@@ -120,7 +120,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-white/20 shadow-lg;
+    @apply bg-white/75 backdrop-blur-2xl border border-white/50 shadow-2xl;
   }
 
   .color-swatch {
@@ -143,10 +143,11 @@
   }
 
   .btn-process {
-    @apply relative overflow-hidden bg-gradient-to-r from-accent to-orange-400 text-white;
+    @apply relative overflow-hidden text-white;
     @apply font-semibold py-4 px-8 rounded-xl transition-all duration-300;
-    @apply hover:shadow-lg hover:shadow-accent/25 hover:scale-[1.02];
+    @apply hover:shadow-lg hover:shadow-accent/30 hover:scale-[1.02];
     @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+    background: linear-gradient(135deg, hsl(225 70% 55%), hsl(270 60% 55%));
   }
 
   .btn-process::before {

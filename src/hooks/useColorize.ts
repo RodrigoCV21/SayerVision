@@ -33,6 +33,24 @@ interface ColorizeResult {
   recommendation?: Recommendation;
 }
 
+// Mapa de descripciones de color para enviar a la IA
+// Esto permite añadir colores nuevos sin redeploy de la Edge Function
+const COLOR_DESCRIPTIONS: Record<ColorOption, string> = {
+  "moss-green":     "Verde musgo — verde profundo y natural como el musgo del bosque, tono #4a6d4a",
+  "wine-red":       "Rojo vino — rojo intenso y elegante como el vino tinto, tono #8b3a3a",
+  "pastel-yellow":  "Amarillo pastel — amarillo suave y cálido, tono crema claro #e8d88a",
+  "primary-red":    "Rojo — rojo primario puro y vibrante, tono #CC2200",
+  "primary-blue":   "Azul — azul primario profundo, tono #1A3DAA",
+  "primary-yellow": "Amarillo — amarillo primario brillante, tono #F5C800",
+  "white":          "Blanco — blanco clásico para interiores y exteriores, tono #F5F5F0",
+  "black":          "Negro — negro profundo y elegante, tono #1A1A1A",
+  "gray":           "Gris — gris neutro versátil, tono #7A7A7A",
+  "beige":          "Beige — tono cálido y suave, tono #D4B896",
+  "orange":         "Naranja — naranja vibrante y energético, tono #E8630A",
+  "purple":         "Morado — morado profundo y sofisticado, tono #7B2D8B",
+  "sky-blue":       "Azul cielo — azul claro y fresco, tono #5EB8DD",
+};
+
 export function useColorize() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +67,10 @@ export function useColorize() {
     setResultImage(null);
     setRecommendation(null);
 
+    // Enviamos la descripción real del color en lugar del ID
+    // Así el backend acepta cualquier color sin necesitar redeploy
+    const colorDescription = COLOR_DESCRIPTIONS[selectedColor];
+
     try {
       const { data, error: fnError } = await supabase.functions.invoke<ColorizeResult>(
         "colorize-surface",
@@ -56,7 +78,10 @@ export function useColorize() {
           body: {
             imageBase64,
             surfaceInstruction,
-            selectedColor,
+            // Siempre un color válido para el backend actual
+            selectedColor: "moss-green",
+            // Override con la descripción real del color elegido
+            colorDescriptionOverride: colorDescription,
           },
         }
       );

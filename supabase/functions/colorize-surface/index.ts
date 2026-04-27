@@ -6,11 +6,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Color definitions
 const COLOR_DESCRIPTIONS: Record<string, string> = {
-  "moss-green": "Verde musgo / Moss green - un verde profundo y natural como el musgo del bosque, tono #4a6d4a aproximadamente",
-  "wine-red": "Rojo vino / Wine red - un rojo intenso y elegante como el vino tinto, tono #8b3a3a aproximadamente",
-  "pastel-yellow": "Amarillo pastel / Pastel yellow - un amarillo suave y cálido, tono crema claro #e8d88a aproximadamente",
+  "moss-green":     "Verde musgo — verde profundo y natural como el musgo del bosque, tono #4a6d4a",
+  "wine-red":       "Rojo vino — rojo intenso y elegante como el vino tinto, tono #8b3a3a",
+  "pastel-yellow":  "Amarillo pastel — amarillo suave y cálido, tono crema claro #e8d88a",
+  "primary-red":    "Rojo — rojo primario puro y vibrante, tono #CC2200",
+  "primary-blue":   "Azul — azul primario profundo, tono #1A3DAA",
+  "primary-yellow": "Amarillo — amarillo primario brillante, tono #F5C800",
+  "white":          "Blanco — blanco clásico para interiores y exteriores, tono #F5F5F0",
+  "black":          "Negro — negro profundo y elegante, tono #1A1A1A",
+  "gray":           "Gris — gris neutro versátil, tono #7A7A7A",
+  "beige":          "Beige — tono cálido y suave, tono #D4B896",
+  "orange":         "Naranja — naranja vibrante y energético, tono #E8630A",
+  "purple":         "Morado — morado profundo y sofisticado, tono #7B2D8B",
+  "sky-blue":       "Azul cielo — azul claro y fresco, tono #5EB8DD",
 };
 
 // Surface categories mapping
@@ -179,8 +188,14 @@ async function callGoogleGemini(apiKey: string, model: string, contents: any[], 
   return await response.json();
 }
 
-// Step 1: Analyze the image with AI to detect material and conditions
-async function analyzeImage(apiKey: string, imageBase64: string, surfaceInstruction: string): Promise<{ material: string; conditions: string; surfaceCategory: string | null }> {
+// Step 1: Analyze the image with AI to detect material, conditions, and validate surface
+async function analyzeImage(apiKey: string, imageBase64: string, surfaceInstruction: string): Promise<{
+  esSuperficiePintable: boolean;
+  razonRechazo?: string;
+  material: string;
+  conditions: string;
+  surfaceCategory: string | null;
+}> {
   const cleanBase64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, "");
 
   try {
@@ -189,8 +204,14 @@ async function analyzeImage(apiKey: string, imageBase64: string, surfaceInstruct
         {
           text: `Analiza esta imagen. El usuario quiere pintar: "${surfaceInstruction}".
 
+PRIMERO, determina si la superficie mencionada es pintable con pintura física.
+Superficies VÁLIDAS para pintar: paredes, muros, madera, metal, pisos de concreto, fachadas, muebles, puertas, rejas, estructuras, azoteas, albercas, etc.
+Superficies INVÁLIDAS (rechaza): personas, animales, plantas vivas, árboles, cielo, nubes, agua natural, tierra, piel humana o animal, vegetación natural, ropa, etc.
+
 Responde SOLO con un JSON válido (sin markdown, sin backticks) con esta estructura exacta:
 {
+  "esSuperficiePintable": true o false,
+  "razonRechazo": "solo si esSuperficiePintable es false, explica brevemente en español",
   "material": "tipo de material detectado (madera, metal, concreto, ladrillo, etc.)",
   "conditions": "condiciones ambientales visibles (soleado, húmedo, interior, exterior, lluvia, etc.)",
   "surfaceCategory": "una de estas categorías exactas: madera, metal, muro, piso, especial"
@@ -213,6 +234,8 @@ Categorías:
     const cleanText = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
     const parsed = JSON.parse(cleanText);
     return {
+      esSuperficiePintable: parsed.esSuperficiePintable !== false,
+      razonRechazo: parsed.razonRechazo,
       material: parsed.material || "no detectado",
       conditions: parsed.conditions || "no detectadas",
       surfaceCategory: parsed.surfaceCategory || detectSurfaceCategory(surfaceInstruction)
@@ -220,6 +243,7 @@ Categorías:
   } catch (err) {
     console.error("Analysis error:", err);
     return {
+      esSuperficiePintable: true,
       material: "no detectado",
       conditions: "no detectadas",
       surfaceCategory: detectSurfaceCategory(surfaceInstruction)
@@ -303,13 +327,15 @@ serve(async (req) => {
       throw new Error("Supabase configuration missing");
     }
 
-    const { imageBase64, surfaceInstruction, selectedColor } = await req.json();
+    const { imageBase64, surfaceInstruction, selectedColor, colorDescriptionOverride } = await req.json();
 
     if (!imageBase64) throw new Error("No image provided");
     if (!surfaceInstruction) throw new Error("No surface instruction provided");
-    if (!selectedColor || !COLOR_DESCRIPTIONS[selectedColor]) throw new Error("Invalid color selection");
 
-    const colorDescription = COLOR_DESCRIPTIONS[selectedColor];
+    // Usar la descripción override si viene del frontend (para nuevos colores sin redeploy)
+    // Si no, buscar en el mapa local de colores
+    const colorDescription = colorDescriptionOverride || COLOR_DESCRIPTIONS[selectedColor];
+    if (!colorDescription) throw new Error("Invalid color selection");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -319,8 +345,21 @@ serve(async (req) => {
 
     console.log(`Found ${products?.length || 0} products`);
 
-    // 1. ANÁLISIS: Esto usa Gemini Nativo
+    // 1. ANÁLISIS: Esto usa Gemini Nativo (también valida si la superficie es pintable)
     const analysis = await analyzeImage(GOOGLE_GEMINI_API_KEY, imageBase64, surfaceInstruction);
+
+    // Rechazar si la IA determinó que la superficie no es pintable
+    if (!analysis.esSuperficiePintable) {
+      return new Response(
+        JSON.stringify({
+          error: `⚠️ No es posible colorizar esta superficie: ${
+            analysis.razonRechazo ||
+            "Solo se pueden colorizar superficies que pueden ser pintadas físicamente (paredes, madera, metal, pisos, etc.)."
+          }`
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // 2. EDICIÓN: Esto usa Lovable Gateway
     let colorizedImageUrl: string = "";
