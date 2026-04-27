@@ -27,11 +27,11 @@ interface Recommendation {
 interface ResultPreviewProps {
   originalImage: string;
   resultImage: string;
-  recommendation?: Recommendation | null;
+  recommendations?: Recommendation[] | null;
   onReset: () => void;
 }
 
-export function ResultPreview({ originalImage, resultImage, recommendation, onReset }: ResultPreviewProps) {
+export function ResultPreview({ originalImage, resultImage, recommendations, onReset }: ResultPreviewProps) {
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = resultImage;
@@ -65,12 +65,20 @@ export function ResultPreview({ originalImage, resultImage, recommendation, onRe
         </div>
       </div>
 
-      {/* Product Recommendation */}
-      {recommendation && (
-        <ProductRecommendation 
-          product={recommendation.product} 
-          surfaceDetected={recommendation.surfaceDetected} 
-        />
+      {/* Product Recommendations */}
+      {recommendations && recommendations.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-display font-semibold text-lg">Productos Recomendados</h4>
+          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+            {recommendations.map((rec, index) => (
+              <ProductRecommendation 
+                key={`${rec.product.id}-${index}`}
+                product={rec.product} 
+                surfaceDetected={rec.surfaceDetected} 
+              />
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="grid md:grid-cols-2 gap-6">

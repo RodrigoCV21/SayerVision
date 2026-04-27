@@ -96,21 +96,25 @@ function productMatchesSurface(product: Product, surfaceCategory: string): numbe
   return score;
 }
 
-function findBestProduct(surfaceCategory: string | null, products: Product[]): Product | null {
-  if (!products || products.length === 0) return null;
+function findBestProducts(surfaceCategory: string | null, products: Product[], limit: number = 3): Product[] {
+  if (!products || products.length === 0) return [];
   if (!surfaceCategory) {
-    return products.find(p => p.applicable_surfaces && p.applicable_surfaces.length > 0) || products[0];
+    const validProducts = products.filter(p => p.applicable_surfaces && p.applicable_surfaces.length > 0);
+    return validProducts.slice(0, limit).length > 0 ? validProducts.slice(0, limit) : products.slice(0, limit);
   }
-  let bestProduct: Product | null = null;
-  let bestScore = 0;
-  for (const product of products) {
-    const score = productMatchesSurface(product, surfaceCategory);
-    if (score > bestScore) {
-      bestScore = score;
-      bestProduct = product;
-    }
-  }
-  if (!bestProduct || bestScore === 0) {
+  
+  // Calcular puntaje para todos los productos
+  const productsWithScore = products.map(product => {
+    return { product, score: productMatchesSurface(product, surfaceCategory) };
+  });
+  
+  // Ordenar por puntaje descendente
+  productsWithScore.sort((a, b) => b.score - a.score);
+  
+  // Filtrar los que tienen puntaje > 0
+  let bestProducts = productsWithScore.filter(p => p.score > 0).map(p => p.product);
+  
+  if (bestProducts.length === 0) {
     const categoryFallback: Record<string, string[]> = {
       madera: ["línea para madera", "madera"],
       metal: ["línea para metales", "metal"],
@@ -119,14 +123,14 @@ function findBestProduct(surfaceCategory: string | null, products: Product[]): P
       especial: ["impermeabilizantes"],
     };
     const fallbackCategories = categoryFallback[surfaceCategory] || [];
-    for (const product of products) {
+    bestProducts = products.filter(product => {
       const productCategory = product.category.toLowerCase();
-      for (const fallback of fallbackCategories) {
-        if (productCategory.includes(fallback)) return product;
-      }
-    }
+      return fallbackCategories.some(fallback => productCategory.includes(fallback));
+    });
   }
-  return bestProduct || products[0];
+  
+  const results = bestProducts.length > 0 ? bestProducts : products;
+  return results.slice(0, limit);
 }
 
 // Helper to call Lovable AI Gateway
@@ -381,53 +385,55 @@ serve(async (req) => {
     console.log("AI Analysis:", analysis);
 
     const surfaceCategory = analysis.surfaceCategory || detectSurfaceCategory(surfaceInstruction);
-    const recommendedProduct = findBestProduct(surfaceCategory, products || []);
+    const recommendedProducts = findBestProducts(surfaceCategory, products || []);
 
-    console.log("Recommendation:", {
+    console.log("Recommendations:", {
       detectedMaterial: analysis.material,
       detectedConditions: analysis.conditions,
       surfaceCategory,
-      recommendedProduct: recommendedProduct?.name || "None",
+      recommendedProducts: recommendedProducts.map(p => p.name).join(", ") || "None",
     });
 
     // Fetch primer if needed
-    let primerProduct: Product | null = null;
-    if (recommendedProduct?.requires_primer && recommendedProduct.primer_product_id) {
-      const { data: primer } = await supabase
-        .from("products")
-        .select("*")
-        .eq("id", recommendedProduct.primer_product_id)
-        .single();
-      primerProduct = primer;
-    }
+    const recommendations = await Promise.all(recommendedProducts.map(async (recommendedProduct) => {
+      let primerProduct: Product | null = null;
+      if (recommendedProduct.requires_primer && recommendedProduct.primer_product_id) {
+        const { data: primer } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", recommendedProduct.primer_product_id)
+          .single();
+        primerProduct = primer;
+      }
 
-    const recommendation = recommendedProduct ? {
-      product: {
-        id: recommendedProduct.id,
-        name: recommendedProduct.name,
-        serie: recommendedProduct.serie || "",
-        description: recommendedProduct.description || "",
-        category: recommendedProduct.category,
-        features: recommendedProduct.features,
-        applicable_surfaces: recommendedProduct.applicable_surfaces,
-        environmental_conditions: recommendedProduct.environmental_conditions,
-        precautions: recommendedProduct.precautions,
-        requiresPrimer: recommendedProduct.requires_primer ? {
-          id: primerProduct?.id || "",
-          name: primerProduct?.name || "Primario recomendado",
-          serie: primerProduct?.serie || "",
-          description: primerProduct?.description || "Aplicar antes del producto principal"
-        } : undefined,
-      },
-      surfaceDetected: `${analysis.material} (${analysis.conditions})`,
-    } : null;
+      return {
+        product: {
+          id: recommendedProduct.id,
+          name: recommendedProduct.name,
+          serie: recommendedProduct.serie || "",
+          description: recommendedProduct.description || "",
+          category: recommendedProduct.category,
+          features: recommendedProduct.features,
+          applicable_surfaces: recommendedProduct.applicable_surfaces,
+          environmental_conditions: recommendedProduct.environmental_conditions,
+          precautions: recommendedProduct.precautions,
+          requiresPrimer: recommendedProduct.requires_primer ? {
+            id: primerProduct?.id || "",
+            name: primerProduct?.name || "Primario recomendado",
+            serie: primerProduct?.serie || "",
+            description: primerProduct?.description || "Aplicar antes del producto principal"
+          } : undefined,
+        },
+        surfaceDetected: `${analysis.material} (${analysis.conditions})`,
+      };
+    }));
 
     return new Response(
       JSON.stringify({
         success: true,
         imageUrl: colorizedImageUrl,
         message: `Material detectado: ${analysis.material}. Condiciones: ${analysis.conditions}.`,
-        recommendation,
+        recommendations,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
