@@ -5,7 +5,8 @@ import { ColorPalette, type ColorOption } from "@/components/ColorPalette";
 import { ResultPreview } from "@/components/ResultPreview";
 import { PrecautionsSection } from "@/components/PrecautionsSection";
 import { useColorize } from "@/hooks/useColorize";
-import { Palette, Sparkles, Loader2, AlertCircle, Lock } from "lucide-react";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { Palette, Sparkles, Loader2, AlertCircle, Lock, LayoutDashboard } from "lucide-react";
 
 const Index = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -13,6 +14,7 @@ const Index = () => {
   const [instruction, setInstruction] = useState("");
 
   const { colorize, isProcessing, error, resultImage, recommendations, reset } = useColorize();
+  const { isAuthenticated, isAdmin, isGerente, isVendedor, isCliente } = useAuthContext();
 
   const handleProcess = async () => {
     if (!uploadedImage || !selectedColor || !instruction.trim()) return;
@@ -39,13 +41,23 @@ const Index = () => {
               <Palette className="w-6 h-6 text-accent" />
               <span className="font-display font-bold">SayerVisionAI</span>
             </div>
-            <Link
-              to="/auth"
-              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Lock className="w-4 h-4" />
-              <span className="hidden sm:inline">Admin</span>
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to={isAdmin ? "/admin" : isGerente ? "/gerente" : isVendedor ? "/vendedor" : "/boveda"}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden sm:inline">Panel</span>
+              </Link>
+            ) : (
+              <Link
+                to="/auth"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Lock className="w-4 h-4" />
+                <span className="hidden sm:inline">Login</span>
+              </Link>
+            )}
           </div>
         </header>
 
@@ -78,13 +90,23 @@ const Index = () => {
             <Palette className="w-6 h-6 text-accent" />
             <span className="font-display font-bold">SayerVisionAI</span>
           </div>
-          <Link
-            to="/auth"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Lock className="w-4 h-4" />
-            <span className="hidden sm:inline">Admin</span>
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              to={isAdmin ? "/admin" : isGerente ? "/gerente" : isVendedor ? "/vendedor" : "/boveda"}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span className="hidden sm:inline">Panel</span>
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Lock className="w-4 h-4" />
+              <span className="hidden sm:inline">Login</span>
+            </Link>
+          )}
         </div>
       </header>
 

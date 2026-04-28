@@ -7,7 +7,13 @@ import { toast } from "sonner";
 
 const authSchema = z.object({
   email: z.string().email("Email inválido").max(255),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").max(72),
+  password: z
+    .string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
+    .max(72)
+    .regex(/[A-Z]/, "La contraseña debe contener al menos una mayúscula")
+    .regex(/[a-z]/, "La contraseña debe contener al menos una minúscula")
+    .regex(/[0-9]/, "La contraseña debe contener al menos un número"),
 });
 
 export default function Auth() {

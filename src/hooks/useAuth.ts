@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-type AppRole = "admin" | "user";
+type AppRole = "admin" | "user" | "gerente" | "vendedor" | "cliente";
 
 interface AuthState {
   user: User | null;
@@ -117,6 +117,9 @@ export function useAuth() {
   };
 
   const isAdmin = authState.role === "admin";
+  const isGerente = authState.role === "gerente";
+  const isVendedor = authState.role === "vendedor";
+  const isCliente = authState.role === "cliente";
   const isAuthenticated = !!authState.user;
 
   return {
@@ -125,6 +128,9 @@ export function useAuth() {
     signIn,
     signOut,
     isAdmin,
+    isGerente,
+    isVendedor,
+    isCliente,
     isAuthenticated,
   };
 }
