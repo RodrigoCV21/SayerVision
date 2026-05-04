@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ImageUploader } from "@/components/ImageUploader";
 import { ColorPalette, type ColorOption } from "@/components/ColorPalette";
 import { ResultPreview } from "@/components/ResultPreview";
 import { PrecautionsSection } from "@/components/PrecautionsSection";
 import { useColorize } from "@/hooks/useColorize";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { Palette, Sparkles, Loader2, AlertCircle, Lock, LayoutDashboard } from "lucide-react";
+import { Palette, Sparkles, Loader2, AlertCircle, Lock, LayoutDashboard, LogOut, User } from "lucide-react";
 
 const Index = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -14,7 +14,16 @@ const Index = () => {
   const [instruction, setInstruction] = useState("");
 
   const { colorize, isProcessing, error, resultImage, recommendations, reset } = useColorize();
-  const { isAuthenticated, isAdmin, isGerente, isVendedor, isCliente } = useAuthContext();
+  const { isAuthenticated, isAdmin, isGerente, isVendedor, isCliente, user, signOut } = useAuthContext();
+  const navigate = useNavigate();
+
+  // Each role has a dedicated panel
+  const panelRoute = isAdmin ? "/admin" : isGerente ? "/gerente" : isVendedor ? "/vendedor" : isCliente ? "/boveda" : null;
+
+  const handleSignOut = () => {
+    signOut();
+    navigate("/");
+  };
 
   const handleProcess = async () => {
     if (!uploadedImage || !selectedColor || !instruction.trim()) return;
@@ -42,13 +51,28 @@ const Index = () => {
               <span className="font-display font-bold">SayerVisionAI</span>
             </div>
             {isAuthenticated ? (
-              <Link
-                to={isAdmin ? "/admin" : isGerente ? "/gerente" : isVendedor ? "/vendedor" : "/boveda"}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden sm:inline">Panel</span>
-              </Link>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline">{user?.full_name || user?.email}</span>
+                </span>
+                {panelRoute && (
+                  <Link
+                    to={panelRoute}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span className="hidden sm:inline">Panel</span>
+                  </Link>
+                )}
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             ) : (
               <Link
                 to="/"
@@ -91,16 +115,31 @@ const Index = () => {
             <span className="font-display font-bold">SayerVisionAI</span>
           </div>
           {isAuthenticated ? (
-            <Link
-              to={isAdmin ? "/admin" : isGerente ? "/gerente" : isVendedor ? "/vendedor" : "/boveda"}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              <span className="hidden sm:inline">Panel</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">{user?.full_name || user?.email}</span>
+              </span>
+              {panelRoute && (
+                <Link
+                  to={panelRoute}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Panel</span>
+                </Link>
+              )}
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           ) : (
             <Link
-              to="/auth"
+              to="/"
               className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <Lock className="w-4 h-4" />

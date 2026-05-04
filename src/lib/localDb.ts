@@ -23,7 +23,9 @@ export interface VaultImage {
   image_url: string;
   type: "uploaded" | "assigned_painting";
   assigned_by?: string; // vendedor/gerente user_id
+  vendor_name?: string; // nombre del vendedor que asignó
   product_id?: string;
+  product_name?: string; // nombre del producto asignado
   created_at: string;
 }
 
@@ -294,5 +296,17 @@ export function deleteVaultImage(id: string): boolean {
   const filtered = images.filter((i) => i.id !== id);
   if (filtered.length === images.length) return false;
   write(KEYS.VAULT_IMAGES, filtered);
+  return true;
+}
+
+export function updateVaultImage(
+  id: string,
+  updates: Partial<Pick<VaultImage, "image_url" | "product_id" | "product_name" | "vendor_name">>
+): boolean {
+  const images = read<VaultImage>(KEYS.VAULT_IMAGES);
+  const idx = images.findIndex((i) => i.id === id);
+  if (idx === -1) return false;
+  images[idx] = { ...images[idx], ...updates };
+  write(KEYS.VAULT_IMAGES, images);
   return true;
 }
