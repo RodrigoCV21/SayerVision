@@ -22,11 +22,8 @@ export default function Auth() {
         navigate("/admin");
       } else if (isGerente) {
         navigate("/gerente");
-      } else if (isVendedor) {
-        navigate("/vendedor");
-      } else if (isCliente) {
-        navigate("/boveda");
       } else {
+        // Vendedor, Cliente y otros roles → herramienta de IA
         navigate("/app");
       }
     }

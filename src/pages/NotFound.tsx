@@ -1,13 +1,21 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Home, AlertTriangle } from "lucide-react";
+import { logout } from "@/lib/localDb";
 
 const NotFound = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
   }, [location.pathname]);
+
+  const handleGoHome = () => {
+    // Clear session to break any redirect loop
+    logout();
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -29,13 +37,13 @@ const NotFound = () => {
           </div>
 
           <div className="pt-4">
-            <Link 
-              to="/" 
+            <button 
+              onClick={handleGoHome}
               className="btn-process w-full flex items-center justify-center gap-2"
             >
               <Home className="w-5 h-5" />
               Volver al inicio
-            </Link>
+            </button>
           </div>
         </div>
       </div>
