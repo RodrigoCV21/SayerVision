@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getUsersByRole, createUser, updateUser, deleteUser, type LocalUser } from "@/lib/localDb";
 import { toast } from "sonner";
 
 export interface Gerente {
@@ -19,55 +19,16 @@ export function useGerentes() {
   const [gerentes, setGerentes] = useState<Gerente[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchGerentes = useCallback(async () => {
+  const fetchGerentes = useCallback(() => {
     setIsLoading(true);
-
-    // 1. Get all user_ids with role "gerente"
-    const { data: roleData, error: roleError } = await supabase
-      .from("user_roles")
-      .select("user_id, created_at")
-      .eq("role", "gerente");
-
-    if (roleError) {
-      console.error("Error fetching gerente roles:", roleError);
-      toast.error("Error al cargar gerentes");
-      setIsLoading(false);
-      return;
-    }
-
-    if (!roleData || roleData.length === 0) {
-      setGerentes([]);
-      setIsLoading(false);
-      return;
-    }
-
-    const userIds = roleData.map((r) => r.user_id);
-
-    // 2. Get profiles for those user_ids
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("user_id, email, full_name, created_at")
-      .in("user_id", userIds);
-
-    if (profileError) {
-      console.error("Error fetching profiles:", profileError);
-      toast.error("Error al cargar perfiles de gerentes");
-      setIsLoading(false);
-      return;
-    }
-
-    // Merge role created_at with profile data
-    const gerenteList: Gerente[] = (profileData || []).map((profile) => {
-      const roleEntry = roleData.find((r) => r.user_id === profile.user_id);
-      return {
-        user_id: profile.user_id,
-        email: profile.email || "",
-        full_name: profile.full_name,
-        created_at: roleEntry?.created_at || profile.created_at,
-      };
-    });
-
-    setGerentes(gerenteList);
+    const users = getUsersByRole("gerente");
+    const list: Gerente[] = users.map((u: LocalUser) => ({
+      user_id: u.id,
+      email: u.email,
+      full_name: u.full_name,
+      created_at: u.created_at,
+    }));
+    setGerentes(list);
     setIsLoading(false);
   }, []);
 
@@ -75,103 +36,54 @@ export function useGerentes() {
     fetchGerentes();
   }, [fetchGerentes]);
 
-  /**
-   * Create a new gerente:
-   * 1. Sign up the user via Supabase Auth (this auto-creates profile + 'user' role via trigger)
-   * 2. Update their role from 'user' to 'gerente'
-   */
-  const createGerente = async (input: GerenteInput): Promise<boolean> => {
-    // Sign up new user
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: input.email,
-      password: input.password,
-      options: {
-        data: {
-          full_name: input.full_name || "",
-        },
-      },
-    });
+  const createGerente = useCallback(
+    (input: GerenteInput): boolean => {
+      const user = createUser({
+        email: input.email,
+        password: input.password,
+        full_name: input.full_name || "",
+        role: "gerente",
+      });
 
-    if (signUpError) {
-      toast.error("Error al crear gerente: " + signUpError.message);
-      return false;
-    }
-
-    const newUserId = signUpData.user?.id;
-    if (!newUserId) {
-      toast.error("No se pudo obtener el ID del nuevo usuario");
-      return false;
-    }
-
-    // Update existing 'user' role to 'gerente'
-    const { error: updateRoleError } = await supabase
-      .from("user_roles")
-      .update({ role: "gerente" as any })
-      .eq("user_id", newUserId);
-
-    if (updateRoleError) {
-      // Might not exist yet if trigger hasn't fired; try insert instead
-      const { error: insertRoleError } = await supabase
-        .from("user_roles")
-        .insert({ user_id: newUserId, role: "gerente" as any });
-
-      if (insertRoleError) {
-        toast.error("Error al asignar rol de gerente: " + insertRoleError.message);
+      if (!user) {
+        toast.error("Error: ese email ya está registrado");
         return false;
       }
-    }
 
-    toast.success("Gerente creado exitosamente");
-    await fetchGerentes();
-    return true;
-  };
+      toast.success("Gerente creado exitosamente");
+      fetchGerentes();
+      return true;
+    },
+    [fetchGerentes]
+  );
 
-  /**
-   * Update a gerente's profile (full_name and/or email)
-   */
-  const updateGerente = async (
-    userId: string,
-    updates: { full_name?: string; email?: string }
-  ): Promise<boolean> => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId);
+  const updateGerente = useCallback(
+    (userId: string, updates: { full_name?: string; email?: string }): boolean => {
+      const success = updateUser(userId, updates);
+      if (!success) {
+        toast.error("Error al actualizar gerente");
+        return false;
+      }
+      toast.success("Gerente actualizado");
+      fetchGerentes();
+      return true;
+    },
+    [fetchGerentes]
+  );
 
-    if (error) {
-      toast.error("Error al actualizar gerente: " + error.message);
-      return false;
-    }
-
-    toast.success("Gerente actualizado");
-    await fetchGerentes();
-    return true;
-  };
-
-  /**
-   * Delete a gerente:
-   * 1. Remove the 'gerente' role (set back to 'user')
-   * Note: We don't delete the auth user from the client; that requires admin API.
-   * Instead we simply revoke the gerente role.
-   */
-  const deleteGerente = async (userId: string): Promise<boolean> => {
-    const { error } = await supabase
-      .from("user_roles")
-      .update({ role: "user" as any })
-      .eq("user_id", userId);
-
-    if (error) {
-      toast.error("Error al eliminar gerente: " + error.message);
-      return false;
-    }
-
-    toast.success("Gerente eliminado (rol revocado)");
-    await fetchGerentes();
-    return true;
-  };
+  const deleteGerente = useCallback(
+    (userId: string): boolean => {
+      const success = deleteUser(userId);
+      if (!success) {
+        toast.error("Error al eliminar gerente");
+        return false;
+      }
+      toast.success("Gerente eliminado");
+      fetchGerentes();
+      return true;
+    },
+    [fetchGerentes]
+  );
 
   return {
     gerentes,

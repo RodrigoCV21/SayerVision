@@ -1,104 +1,64 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { z } from "zod";
 import { Eye, EyeOff, Loader2, Palette } from "lucide-react";
 import { toast } from "sonner";
-
-const authSchema = z.object({
-  email: z.string().email("Email inválido").max(255),
-  password: z
-    .string()
-    .min(8, "La contraseña debe tener al menos 8 caracteres")
-    .max(72)
-    .regex(/[A-Z]/, "La contraseña debe contener al menos una mayúscula")
-    .regex(/[a-z]/, "La contraseña debe contener al menos una minúscula")
-    .regex(/[0-9]/, "La contraseña debe contener al menos un número"),
-});
 
 export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState("");
 
-  const { signIn, signUp, isAuthenticated, isAdmin, isLoading } = useAuthContext();
+  const { signIn, isAuthenticated, isAdmin, isGerente, isVendedor, isCliente, isLoading } =
+    useAuthContext();
   const navigate = useNavigate();
 
+  // Redirect authenticated users to their panel
   useEffect(() => {
-    if (!isLoading && isAuthenticated && isAdmin) {
-      navigate("/admin");
-    } else if (!isLoading && isAuthenticated && !isAdmin) {
-      toast.error("Acceso solo para administradores");
-      navigate("/");
-    }
-  }, [isAuthenticated, isAdmin, isLoading, navigate]);
-
-  const validateForm = () => {
-    try {
-      authSchema.parse({ email, password });
-      setErrors({});
-      return true;
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        const newErrors: Record<string, string> = {};
-        err.errors.forEach((e) => {
-          if (e.path[0]) {
-            newErrors[e.path[0] as string] = e.message;
-          }
-        });
-        setErrors(newErrors);
+    if (!isLoading && isAuthenticated) {
+      if (isAdmin) {
+        navigate("/admin");
+      } else if (isGerente) {
+        navigate("/gerente");
+      } else if (isVendedor) {
+        navigate("/vendedor");
+      } else if (isCliente) {
+        navigate("/boveda");
+      } else {
+        navigate("/app");
       }
-      return false;
     }
-  };
+  }, [isAuthenticated, isAdmin, isGerente, isVendedor, isCliente, isLoading, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    setFormError("");
+
+    if (!email.trim() || !password.trim()) {
+      setFormError("Ingresa tu email y contraseña");
+      return;
+    }
 
     setIsSubmitting(true);
 
-    try {
-      // Try to sign in first
-      const { error: signInError } = await signIn(email, password);
-      
-      if (signInError) {
-        // If login fails and it's the admin email, try to register first
-        if (signInError.message.includes("Invalid login credentials") && 
-            (email.toLowerCase() === "admin@colorizeai.com" || email.toLowerCase() === "andres@gmail.com")) {
-          // Try to sign up the admin
-          const { error: signUpError } = await signUp(email, password, "Subejefe de desarrollo Andrés");
-          
-          if (signUpError) {
-            if (signUpError.message.includes("already registered")) {
-              toast.error("Credenciales incorrectas");
-            } else {
-              toast.error(signUpError.message);
-            }
-            return;
-          }
-          
-          // Now try to sign in again
-          const { error: retryError } = await signIn(email, password);
-          if (retryError) {
-            toast.error("Error al iniciar sesión. Intenta de nuevo.");
-            return;
-          }
-          
-          toast.success("¡Cuenta de administrador creada! Bienvenido.");
-          return;
-        }
-        
-        toast.error("Credenciales incorrectas");
-        return;
-      }
-      
-      toast.success("¡Bienvenido Administrador!");
-    } finally {
-      setIsSubmitting(false);
+    const { user, error } = signIn(email, password);
+
+    if (error || !user) {
+      setFormError("Credenciales incorrectas");
+      toast.error("Credenciales incorrectas");
+    } else {
+      const roleNames: Record<string, string> = {
+        admin: "Administrador",
+        gerente: "Gerente",
+        vendedor: "Vendedor",
+        cliente: "Cliente",
+      };
+      toast.success(`¡Bienvenido ${roleNames[user.role] || "Usuario"}!`);
     }
+
+    setIsSubmitting(false);
   };
 
   if (isLoading) {
@@ -119,13 +79,12 @@ export default function Auth() {
               <Palette className="w-6 h-6 text-accent" />
             </div>
             <div className="text-center">
-              <h1 className="font-display text-2xl font-bold">ColorizeAI</h1>
-              <p className="text-sm text-muted-foreground">Panel de Administración</p>
+              <h1 className="font-display text-2xl font-bold">SayerVisionAI</h1>
+              <p className="text-sm text-muted-foreground">Iniciar Sesión</p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Email
@@ -133,15 +92,12 @@ export default function Auth() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setFormError(""); }}
                 className="w-full px-4 py-3 rounded-xl border border-border bg-background 
                          focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                 placeholder="tu@email.com"
                 required
               />
-              {errors.email && (
-                <p className="text-destructive text-sm mt-1">{errors.email}</p>
-              )}
             </div>
 
             <div>
@@ -152,7 +108,7 @@ export default function Auth() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setFormError(""); }}
                   className="w-full px-4 py-3 rounded-xl border border-border bg-background 
                            focus:ring-2 focus:ring-accent focus:border-transparent transition-all pr-12"
                   placeholder="••••••••"
@@ -167,10 +123,11 @@ export default function Auth() {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-destructive text-sm mt-1">{errors.password}</p>
-              )}
             </div>
+
+            {formError && (
+              <p className="text-destructive text-sm text-center">{formError}</p>
+            )}
 
             <button
               type="submit"

@@ -8,8 +8,8 @@ export default function GerenteDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"productos" | "vendedores" | "clientes" | "bovedas">("vendedores");
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    signOut();
     navigate("/");
   };
 

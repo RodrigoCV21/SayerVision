@@ -62,31 +62,31 @@ export default function Admin() {
   };
 
   // Gerente handlers
-  const handleCreateGerente = async (input: GerenteInput) => {
-    const success = await createGerente(input);
+  const handleCreateGerente = (input: GerenteInput) => {
+    const success = createGerente(input);
     if (success) {
       setShowGerenteForm(false);
     }
   };
 
-  const handleUpdateGerente = async (input: { full_name?: string; email?: string }) => {
+  const handleUpdateGerente = (input: { full_name?: string; email?: string }) => {
     if (!editingGerente) return;
-    const success = await updateGerente(editingGerente.user_id, input);
+    const success = updateGerente(editingGerente.user_id, input);
     if (success) {
       setEditingGerente(null);
     }
   };
 
-  const handleDeleteGerente = async (userId: string) => {
-    if (!confirm("¿Estás seguro de revocar el rol de gerente a este usuario?")) return;
+  const handleDeleteGerente = (userId: string) => {
+    if (!confirm("¿Estás seguro de eliminar este gerente?")) return;
     setDeletingGerenteId(userId);
-    await deleteGerente(userId);
+    deleteGerente(userId);
     setDeletingGerenteId(null);
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth");
+  const handleSignOut = () => {
+    signOut();
+    navigate("/");
   };
 
   const handleBack = () => {
