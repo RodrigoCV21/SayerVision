@@ -23,17 +23,24 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { signIn, signUp, isAuthenticated, isAdmin, isLoading } = useAuthContext();
+  const { signIn, signUp, isAuthenticated, isAdmin, isGerente, isVendedor, isCliente, role, isLoading } = useAuthContext();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && isAdmin) {
-      navigate("/admin");
-    } else if (!isLoading && isAuthenticated && !isAdmin) {
-      toast.error("Acceso solo para administradores");
-      navigate("/");
+    if (!isLoading && isAuthenticated) {
+      if (isAdmin) {
+        navigate("/admin");
+      } else if (isGerente) {
+        navigate("/gerente");
+      } else if (isVendedor) {
+        navigate("/vendedor");
+      } else if (isCliente) {
+        navigate("/boveda");
+      } else {
+        navigate("/app");
+      }
     }
-  }, [isAuthenticated, isAdmin, isLoading, navigate]);
+  }, [isAuthenticated, isAdmin, isGerente, isVendedor, isCliente, isLoading, navigate]);
 
   const validateForm = () => {
     try {
@@ -95,7 +102,8 @@ export default function Auth() {
         return;
       }
       
-      toast.success("¡Bienvenido Administrador!");
+      const roleName = isAdmin ? "Administrador" : isGerente ? "Gerente" : isVendedor ? "Vendedor" : isCliente ? "Cliente" : "Usuario";
+      toast.success(`¡Bienvenido ${roleName}!`);
     } finally {
       setIsSubmitting(false);
     }
@@ -119,8 +127,8 @@ export default function Auth() {
               <Palette className="w-6 h-6 text-accent" />
             </div>
             <div className="text-center">
-              <h1 className="font-display text-2xl font-bold">ColorizeAI</h1>
-              <p className="text-sm text-muted-foreground">Panel de Administración</p>
+              <h1 className="font-display text-2xl font-bold">SayerVisionAI</h1>
+              <p className="text-sm text-muted-foreground">Iniciar Sesión</p>
             </div>
           </div>
 

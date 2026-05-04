@@ -81,7 +81,16 @@ export function useGerentes() {
    * 2. Update their role from 'user' to 'gerente'
    */
   const createGerente = async (input: GerenteInput): Promise<boolean> => {
-    // Sign up new user
+    // Save the current admin session before creating a new user
+    const { data: currentSessionData } = await supabase.auth.getSession();
+    const currentSession = currentSessionData.session;
+
+    if (!currentSession) {
+      toast.error("No hay sesión activa. Inicia sesión de nuevo.");
+      return false;
+    }
+
+    // Sign up new user (this will change the active session!)
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: input.email,
       password: input.password,
@@ -94,14 +103,29 @@ export function useGerentes() {
 
     if (signUpError) {
       toast.error("Error al crear gerente: " + signUpError.message);
+      // Restore admin session in case it was partially changed
+      await supabase.auth.setSession({
+        access_token: currentSession.access_token,
+        refresh_token: currentSession.refresh_token,
+      });
       return false;
     }
 
     const newUserId = signUpData.user?.id;
     if (!newUserId) {
       toast.error("No se pudo obtener el ID del nuevo usuario");
+      await supabase.auth.setSession({
+        access_token: currentSession.access_token,
+        refresh_token: currentSession.refresh_token,
+      });
       return false;
     }
+
+    // Restore admin session IMMEDIATELY so subsequent queries use admin's permissions
+    await supabase.auth.setSession({
+      access_token: currentSession.access_token,
+      refresh_token: currentSession.refresh_token,
+    });
 
     // Update existing 'user' role to 'gerente'
     const { error: updateRoleError } = await supabase
