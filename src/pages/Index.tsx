@@ -14,11 +14,11 @@ const Index = () => {
   const [instruction, setInstruction] = useState("");
 
   const { colorize, isProcessing, error, resultImage, recommendations, reset } = useColorize();
-  const { isAuthenticated, isAdmin, isGerente, user, signOut } = useAuthContext();
+  const { isAuthenticated, isAdmin, isGerente, isVendedor, isCliente, user, signOut } = useAuthContext();
   const navigate = useNavigate();
 
-  // Only admin and gerente have dedicated panels
-  const panelRoute = isAdmin ? "/admin" : isGerente ? "/gerente" : null;
+  // Each role has a dedicated panel
+  const panelRoute = isAdmin ? "/admin" : isGerente ? "/gerente" : isVendedor ? "/vendedor" : isCliente ? "/boveda" : null;
 
   const handleSignOut = () => {
     signOut();
