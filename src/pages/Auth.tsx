@@ -67,9 +67,9 @@ export default function Auth() {
       if (signInError) {
         // If login fails and it's the admin email, try to register first
         if (signInError.message.includes("Invalid login credentials") && 
-            email.toLowerCase() === "admin@colorizeai.com") {
+            (email.toLowerCase() === "admin@colorizeai.com" || email.toLowerCase() === "andres@gmail.com")) {
           // Try to sign up the admin
-          const { error: signUpError } = await signUp(email, password, "Administrador");
+          const { error: signUpError } = await signUp(email, password, "Subejefe de desarrollo Andrés");
           
           if (signUpError) {
             if (signUpError.message.includes("already registered")) {
