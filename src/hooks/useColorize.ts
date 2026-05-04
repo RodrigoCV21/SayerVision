@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalProducts } from "@/lib/localDb";
+import { detectSurfaceCategory, findBestProducts } from "@/lib/recommendations";
+import type { Product } from "@/hooks/useProducts";
 import type { ColorOption } from "@/components/ColorPalette";
 
 interface Product {
@@ -96,9 +99,67 @@ export function useColorize() {
 
       if (data?.success && data.imageUrl) {
         setResultImage(data.imageUrl);
-        if (data.recommendations) {
-          setRecommendations(data.recommendations);
+
+        // Fetch products locally to calculate recommendations
+        let availableProducts = getLocalProducts() as unknown as Product[];
+        
+        // Try to fetch from Supabase if local is empty
+        if (availableProducts.length === 0) {
+          try {
+            const { data: remoteProducts } = await supabase.from("products").select("*");
+            if (remoteProducts) {
+              availableProducts = remoteProducts as Product[];
+            }
+          } catch (e) {
+            // ignore
+          }
         }
+
+        // Parse surface detected from message (e.g. "Material detectado: madera. Condiciones: interior.")
+        let surfaceDetected = "superficie";
+        let surfaceCat = detectSurfaceCategory(surfaceInstruction);
+        
+        if (data.message) {
+          const materialMatch = data.message.match(/Material detectado: ([^.]+)/i);
+          const material = materialMatch ? materialMatch[1].trim() : "desconocido";
+          const conditionsMatch = data.message.match(/Condiciones: ([^.]+)/i);
+          const conditions = conditionsMatch ? conditionsMatch[1].trim() : "";
+          
+          surfaceDetected = `${material} ${conditions ? `(${conditions})` : ""}`;
+          
+          if (!surfaceCat) {
+             surfaceCat = detectSurfaceCategory(material);
+          }
+        }
+
+        const bestProducts = findBestProducts(surfaceCat, availableProducts);
+        
+        // Map to Recommendation format
+        const finalRecommendations = bestProducts.map(product => {
+          let primerInfo = undefined;
+          
+          if (product.requires_primer && product.primer_product_id) {
+            const primer = availableProducts.find(p => p.id === product.primer_product_id);
+            if (primer) {
+              primerInfo = {
+                id: primer.id,
+                name: primer.name,
+                serie: primer.serie || "",
+                description: primer.description || "Aplicar antes del producto principal"
+              };
+            }
+          }
+
+          return {
+            product: {
+              ...product,
+              requiresPrimer: primerInfo
+            },
+            surfaceDetected
+          };
+        });
+
+        setRecommendations(finalRecommendations);
         return true;
       }
 
