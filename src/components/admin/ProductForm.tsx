@@ -140,6 +140,7 @@ export function ProductForm({ initialData, products, onSubmit, onCancel }: Produ
   const [precautions, setPrecautions] = useState<string[]>(initialData?.precautions ?? []);
   const [requiresPrimer, setRequiresPrimer] = useState(initialData?.requires_primer ?? false);
   const [primerProductId, setPrimerProductId] = useState(initialData?.primer_product_id ?? "");
+  const [price, setPrice]             = useState<number>(initialData?.price ?? 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,6 +157,7 @@ export function ProductForm({ initialData, products, onSubmit, onCancel }: Produ
       precautions,
       requires_primer: requiresPrimer,
       primer_product_id: requiresPrimer && primerProductId ? primerProductId : undefined,
+      price: Number(price) || 0,
     });
     setIsSubmitting(false);
   };
@@ -204,6 +206,26 @@ export function ProductForm({ initialData, products, onSubmit, onCancel }: Produ
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
+      </div>
+      
+      {/* Precio */}
+      <div>
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+          Precio de Venta <span className="text-destructive">*</span>
+        </label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">$</span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={price}
+            onChange={(e) => setPrice(Number(e.target.value))}
+            required
+            placeholder="0.00"
+            className="input-instruction pl-7"
+          />
+        </div>
       </div>
 
       {/* Descripción adicional */}

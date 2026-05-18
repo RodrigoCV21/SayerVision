@@ -6,6 +6,7 @@ import { ResultPreview } from "@/components/ResultPreview";
 import { PrecautionsSection } from "@/components/PrecautionsSection";
 import { useColorize } from "@/hooks/useColorize";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useVault } from "@/hooks/useVault";
 import { Palette, Sparkles, Loader2, AlertCircle, Lock, LayoutDashboard, LogOut, User } from "lucide-react";
 
 const Index = () => {
@@ -15,6 +16,7 @@ const Index = () => {
 
   const { colorize, isProcessing, error, resultImage, recommendations, reset } = useColorize();
   const { isAuthenticated, isAdmin, isGerente, isVendedor, isCliente, user, signOut } = useAuthContext();
+  const vault = useVault(user?.id);
   const navigate = useNavigate();
 
   // Each role has a dedicated panel
@@ -27,7 +29,16 @@ const Index = () => {
 
   const handleProcess = async () => {
     if (!uploadedImage || !selectedColor || !instruction.trim()) return;
-    await colorize(uploadedImage, instruction.trim(), selectedColor);
+    const success = await colorize(uploadedImage, instruction.trim(), selectedColor);
+
+    // Auto-save to vault ONLY for clients if successful
+    if (success && isCliente && user?.id) {
+      vault.addImage({
+        client_id: user.id,
+        image_url: uploadedImage,
+        type: "uploaded"
+      });
+    }
   };
 
   const handleReset = () => {
@@ -165,7 +176,7 @@ const Index = () => {
             </h1>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
               Sube una imagen, indica qué superficie quieres cambiar y selecciona un color.
-              Nuestra IA hará el resto.
+              La IA hará el resto.
             </p>
           </div>
 

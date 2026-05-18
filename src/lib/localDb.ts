@@ -1,50 +1,12 @@
 /**
  * LocalDB — Motor de datos local usando localStorage.
- * Reemplaza Supabase Auth y tablas de roles/perfiles para demo.
- * Supabase se mantiene SOLO para la Edge Function de IA y lectura de productos.
+ * Supabase se mantiene SOLO para la Edge Function de IA.
  */
+import { INITIAL_PRODUCTS } from "./seedProducts";
+import { AppRole, LocalUser, VaultImage, LocalProduct } from "./database.types";
 
-// ── Types ──────────────────────────────────────────────
-
-export type AppRole = "admin" | "gerente" | "vendedor" | "cliente";
-
-export interface LocalUser {
-  id: string;
-  email: string;
-  password: string; // stored as-is for demo (not production!)
-  full_name: string;
-  role: AppRole;
-  created_at: string;
-}
-
-export interface VaultImage {
-  id: string;
-  client_id: string;
-  image_url: string;
-  type: "uploaded" | "assigned_painting";
-  assigned_by?: string; // vendedor/gerente user_id
-  vendor_name?: string; // nombre del vendedor que asignó
-  product_id?: string;
-  product_name?: string; // nombre del producto asignado
-  created_at: string;
-}
-
-export interface LocalProduct {
-  id: string;
-  name: string;
-  serie: string | null;
-  category: string;
-  description: string | null;
-  features: string[];
-  applicable_surfaces: string[];
-  environmental_conditions: string[];
-  precautions: string[];
-  requires_primer: boolean;
-  primer_product_id: string | null;
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-}
+// Re-export for convenience if needed elsewhere
+export type { AppRole, LocalUser, VaultImage, LocalProduct };
 
 // ── Keys ───────────────────────────────────────────────
 
@@ -123,10 +85,25 @@ const SEED_USERS: LocalUser[] = [
 // ── Initialization ─────────────────────────────────────
 
 export function initLocalDb(): void {
-  if (localStorage.getItem(KEYS.INITIALIZED)) return;
-  write(KEYS.USERS, SEED_USERS);
-  write(KEYS.VAULT_IMAGES, []);
-  localStorage.setItem(KEYS.INITIALIZED, "true");
+  // Check users/vault initialization
+  if (!localStorage.getItem(KEYS.INITIALIZED)) {
+    write(KEYS.USERS, SEED_USERS);
+    write(KEYS.VAULT_IMAGES, []);
+    localStorage.setItem(KEYS.INITIALIZED, "true");
+  }
+
+  // Check products initialization separately
+  const existingProducts = read<LocalProduct>(KEYS.PRODUCTS);
+  if (existingProducts.length === 0) {
+    const productsWithIds = INITIAL_PRODUCTS.map((p) => ({
+      ...p,
+      id: p.name.toLowerCase().includes("sellador") ? "seed-primer-1" : generateId(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+    write(KEYS.PRODUCTS, productsWithIds);
+    console.log("Local products seeded successfully.");
+  }
 }
 
 // ── Auth ───────────────────────────────────────────────
@@ -241,12 +218,13 @@ export function getLocalProducts(): LocalProduct[] {
   return read<LocalProduct>(KEYS.PRODUCTS);
 }
 
-export function createLocalProduct(input: Omit<LocalProduct, "id" | "created_at" | "updated_at">): LocalProduct {
+export function createLocalProduct(input: Omit<LocalProduct, "id" | "created_at" | "updated_at"> & { id?: string }): LocalProduct {
   const products = read<LocalProduct>(KEYS.PRODUCTS);
   const now = new Date().toISOString();
   const product: LocalProduct = {
     ...input,
-    id: generateId(),
+    id: input.id || generateId(),
+    price: input.price ?? 0,
     created_at: now,
     updated_at: now,
   };

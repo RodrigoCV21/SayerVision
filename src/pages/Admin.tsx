@@ -7,6 +7,7 @@ import {
   Plus, Pencil, Trash2, ArrowLeft, Package, Loader2, 
   AlertTriangle, ChevronDown, ChevronUp, Users, Boxes, Mail, User
 } from "lucide-react";
+import { SayerVisionAILink } from "@/components/shared/SayerVisionAILink";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { GerenteForm } from "@/components/admin/GerenteForm";
 import { toast } from "sonner";
@@ -122,6 +123,9 @@ export default function Admin() {
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
+          
+          <SayerVisionAILink />
+
           <button
             onClick={handleSignOut}
             className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"

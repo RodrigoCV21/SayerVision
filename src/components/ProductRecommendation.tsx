@@ -6,11 +6,13 @@ interface Product {
   serie: string;
   description: string;
   category: string;
+  price?: number;
   requiresPrimer?: {
     id: string;
     name: string;
     serie: string;
     description: string;
+    price?: number;
   };
 }
 
@@ -40,9 +42,14 @@ export function ProductRecommendation({ product, surfaceDetected }: ProductRecom
             <h4 className="font-display font-semibold text-xl">{product.name}</h4>
             <p className="text-sm text-muted-foreground">Serie: {product.serie}</p>
           </div>
-          <span className="px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">
-            {product.category}
-          </span>
+          <div className="text-right">
+            <span className="px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium block mb-1">
+              {product.category}
+            </span>
+            <span className="text-lg font-bold text-accent">
+              ${(product.price ?? 0).toFixed(2)}
+            </span>
+          </div>
         </div>
         
         <div className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -60,6 +67,7 @@ export function ProductRecommendation({ product, surfaceDetected }: ProductRecom
           <div className="pl-6">
             <p className="font-medium">{product.requiresPrimer.name}</p>
             <p className="text-sm text-muted-foreground">Serie: {product.requiresPrimer.serie}</p>
+            <p className="text-sm font-semibold text-accent mt-1">${(product.requiresPrimer.price ?? 0).toFixed(2)}</p>
             <p className="text-sm text-muted-foreground mt-1">{product.requiresPrimer.description}</p>
           </div>
         </div>

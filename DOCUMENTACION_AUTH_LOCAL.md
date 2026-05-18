@@ -33,7 +33,8 @@ Puedes iniciar sesión en la ruta raíz (`/`) usando cualquiera de estas credenc
 | **Vendedor**| `vendedor@sayervision.com`| `Vendedor1234` | `/vendedor` |
 | **Cliente** | `cliente@sayervision.com` | `Cliente1234` | `/boveda` |
 
----
+---o
+
 
 ## 🔄 Resumen de Hooks Modificados
 

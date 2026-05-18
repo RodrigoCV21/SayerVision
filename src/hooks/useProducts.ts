@@ -23,6 +23,7 @@ export interface Product {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  price: number;
 }
 
 export interface ProductInput {
@@ -36,6 +37,7 @@ export interface ProductInput {
   precautions?: string[];
   requires_primer?: boolean;
   primer_product_id?: string;
+  price?: number;
 }
 
 export function useProducts() {
@@ -48,33 +50,10 @@ export function useProducts() {
     setIsLoading(true);
     setError(null);
 
-    // Try Supabase first
-    try {
-      const { data, error: fetchError } = await supabase
-        .from("products")
-        .select("*")
-        .order("category", { ascending: true })
-        .order("name", { ascending: true });
-
-      if (fetchError) throw fetchError;
-
-      // Merge with local products
-      const localProducts = getLocalProducts();
-      const supabaseIds = new Set((data || []).map((p: Product) => p.id));
-      const uniqueLocal = localProducts.filter((p) => !supabaseIds.has(p.id));
-      const merged = [...(data || []), ...uniqueLocal] as Product[];
-
-      setProducts(merged);
-      setIsLoading(false);
-      return;
-    } catch (err) {
-      console.warn("Supabase products fetch failed, using local storage:", err);
-      setUseLocal(true);
-    }
-
-    // Fallback to local
+    // Pure local mode for demo stability
     const localProducts = getLocalProducts();
     setProducts(localProducts as Product[]);
+    setUseLocal(true);
     setIsLoading(false);
   }, []);
 
@@ -95,6 +74,7 @@ export function useProducts() {
       precautions: input.precautions || [],
       requires_primer: input.requires_primer || false,
       primer_product_id: input.primer_product_id || null,
+      price: input.price ?? 0,
       created_by: null,
     });
 
@@ -104,28 +84,50 @@ export function useProducts() {
   };
 
   const updateProduct = async (id: string, input: Partial<ProductInput>): Promise<boolean> => {
+    let supabaseSuccess = false;
+
     // Try Supabase first if not in local mode
     if (!useLocal) {
       try {
-        const { error } = await supabase
+        const { error: supabaseError } = await supabase
           .from("products")
           .update({ ...input, updated_at: new Date().toISOString() })
           .eq("id", id);
 
-        if (!error) {
-          toast.success("Producto actualizado");
-          await fetchProducts();
-          return true;
+        if (!supabaseError) {
+          supabaseSuccess = true;
+        } else {
+          console.warn("Supabase update failed (likely missing 'price' column), falling back to local storage:", supabaseError);
         }
-      } catch {
-        // Fall through to local
+      } catch (err) {
+        console.warn("Supabase exception during update:", err);
       }
+    }
+
+    if (supabaseSuccess) {
+      toast.success("Producto actualizado");
+      await fetchProducts();
+      return true;
     }
 
     // Local fallback
     const success = updateLocalProduct(id, input as any);
     if (success) {
-      toast.success("Producto actualizado");
+      toast.success("Producto actualizado localmente");
+      await fetchProducts();
+      return true;
+    }
+
+    // If it's a Supabase product that failed to update remotely, 
+    // we save it as a local override.
+    const originalProduct = products.find(p => p.id === id);
+    if (originalProduct) {
+      createLocalProduct({
+        ...originalProduct,
+        ...input,
+        id: id // preserve ID
+      } as any);
+      toast.success("Cambios guardados localmente");
       await fetchProducts();
       return true;
     }

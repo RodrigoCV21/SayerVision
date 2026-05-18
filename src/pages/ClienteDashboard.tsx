@@ -6,6 +6,7 @@ import {
   ArrowLeft, LogOut, Camera, ShoppingBag, Trash2,
   Palette, Image,
 } from "lucide-react";
+import { SayerVisionAILink } from "@/components/shared/SayerVisionAILink";
 
 type ClienteView = "dashboard" | "imagenes" | "pinturas";
 
@@ -152,6 +153,9 @@ export default function ClienteDashboard() {
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
+          
+          <SayerVisionAILink />
+
           <button onClick={handleSignOut}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
             <LogOut className="w-4 h-4" /> Cerrar Sesión
