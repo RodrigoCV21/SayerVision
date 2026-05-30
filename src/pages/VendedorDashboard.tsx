@@ -71,7 +71,7 @@ export default function VendedorDashboard() {
   const renderDashboard = () => (
     <div className="space-y-8">
       <h2 className="font-display text-3xl font-bold text-center">
-        Bienvenido, <span className="text-accent">(Vendedor)</span>
+        Bienvenido, <span className="text-accent">{user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : "Vendedor"}</span>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
         <button onClick={() => setActiveView("consultar")}
@@ -185,7 +185,7 @@ export default function VendedorDashboard() {
         <div className="pt-2 border-t border-border">
           <p className="text-sm text-muted-foreground mb-3">
             <UserCheck className="w-4 h-4 inline mr-1" />
-            Vendedor asignador: <strong>{user?.full_name || user?.email}</strong>
+            Vendedor asignado: <strong>{user?.full_name || user?.email}</strong>
           </p>
           <button onClick={handleAssign}
             disabled={!selectedClientId || !selectedProductId}

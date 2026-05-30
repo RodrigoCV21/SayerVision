@@ -40,7 +40,7 @@ export default function ClienteDashboard() {
   const renderDashboard = () => (
     <div className="space-y-8">
       <h2 className="font-display text-3xl font-bold text-center">
-        Bienvenido, <span className="text-accent">(Cliente)</span>
+        Bienvenido, <span className="text-accent">{user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : "Cliente"}</span>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
         <button onClick={() => setActiveView("imagenes")}
@@ -83,9 +83,24 @@ export default function ClienteDashboard() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {vault.uploadedImages.map((img) => (
-            <div key={img.id} className="relative group rounded-2xl overflow-hidden shadow-soft bg-card">
-              <img src={img.image_url} alt="Imagen subida" className="w-full h-48 object-cover" />
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
+            <div key={img.id} className="relative group rounded-2xl overflow-hidden shadow-soft bg-card flex flex-col">
+              <div className="flex w-full h-48">
+                <div className="w-1/2 relative border-r border-border/50">
+                  <img src={img.image_url} alt="Original" className="w-full h-full object-cover" />
+                  <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 text-white text-[10px] font-bold rounded-md uppercase tracking-wider">Original</span>
+                </div>
+                <div className="w-1/2 relative bg-accent/5">
+                  {img.result_image_url ? (
+                    <>
+                      <img src={img.result_image_url} alt="Pintada" className="w-full h-full object-cover" />
+                      <span className="absolute top-2 right-2 px-2 py-0.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-md uppercase tracking-wider">Pintada</span>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Sin resultado</div>
+                  )}
+                </div>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent pointer-events-none">
                 <p className="text-white text-sm">{new Date(img.created_at).toLocaleDateString("es-MX", {
                   year: "numeric", month: "short", day: "numeric"
                 })}</p>

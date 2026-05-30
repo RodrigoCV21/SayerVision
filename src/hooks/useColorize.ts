@@ -52,7 +52,7 @@ export function useColorize() {
     imageBase64: string,
     surfaceInstruction: string,
     selectedColor: ColorOption
-  ): Promise<boolean> => {
+  ): Promise<string | null> => {
     setIsProcessing(true);
     setError(null);
     setResultImage(null);
@@ -148,14 +148,14 @@ export function useColorize() {
         });
 
         setRecommendations(finalRecommendations);
-        return true;
+        return data.imageUrl;
       }
 
       throw new Error("No se recibió una imagen del servidor");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error al procesar la imagen";
       setError(message);
-      return false;
+      return null;
     } finally {
       setIsProcessing(false);
     }

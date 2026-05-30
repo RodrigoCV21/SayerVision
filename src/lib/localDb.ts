@@ -279,7 +279,7 @@ export function deleteVaultImage(id: string): boolean {
 
 export function updateVaultImage(
   id: string,
-  updates: Partial<Pick<VaultImage, "image_url" | "product_id" | "product_name" | "vendor_name">>
+  updates: Partial<Pick<VaultImage, "image_url" | "result_image_url" | "product_id" | "product_name" | "vendor_name">>
 ): boolean {
   const images = read<VaultImage>(KEYS.VAULT_IMAGES);
   const idx = images.findIndex((i) => i.id === id);

@@ -13,6 +13,7 @@ export interface VaultImage {
   id: string;
   client_id: string;
   image_url: string;
+  result_image_url?: string;
   type: "uploaded" | "assigned_painting";
   assigned_by?: string;
   vendor_name?: string;

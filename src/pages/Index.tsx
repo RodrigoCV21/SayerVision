@@ -29,13 +29,14 @@ const Index = () => {
 
   const handleProcess = async () => {
     if (!uploadedImage || !selectedColor || !instruction.trim()) return;
-    const success = await colorize(uploadedImage, instruction.trim(), selectedColor);
+    const finalImageUrl = await colorize(uploadedImage, instruction.trim(), selectedColor);
 
     // Auto-save to vault ONLY for clients if successful
-    if (success && isCliente && user?.id) {
+    if (finalImageUrl && isCliente && user?.id) {
       vault.addImage({
         client_id: user.id,
         image_url: uploadedImage,
+        result_image_url: finalImageUrl,
         type: "uploaded"
       });
     }

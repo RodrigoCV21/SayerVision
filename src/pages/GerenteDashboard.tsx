@@ -77,7 +77,7 @@ export default function GerenteDashboard() {
   const renderDashboard = () => (
     <div className="space-y-8">
       <h2 className="font-display text-3xl font-bold text-center">
-        Bienvenido, <span className="text-accent">(Gerente)</span>
+        Bienvenido, <span className="text-accent">{user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : "Gerente"}</span>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
@@ -159,15 +159,17 @@ export default function GerenteDashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={(e) => { e.stopPropagation(); setEditingProduct(product); }}
-                    className="p-2 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg transition-colors">
+                    className="p-2 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg transition-colors"
+                    title="Editar producto">
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button onClick={async (e) => { e.stopPropagation(); if (confirm("¿Eliminar este producto?")) { setDeletingProductId(product.id); await deleteProduct(product.id); setDeletingProductId(null); } }}
                     disabled={deletingProductId === product.id}
-                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50">
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50"
+                    title="Eliminar producto">
                     {deletingProductId === product.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   </button>
-                  {expandedProduct === product.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  {expandedProduct === product.id ? <ChevronUp className="w-4 h-4" title="Contraer detalles" /> : <ChevronDown className="w-4 h-4" title="Expandir detalles" />}
                 </div>
               </div>
               {expandedProduct === product.id && (
@@ -241,12 +243,14 @@ export default function GerenteDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => setEditingVendedor(v)}
-                  className="p-2 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg transition-colors">
+                  className="p-2 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg transition-colors"
+                  title="Editar vendedor">
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button onClick={() => { if (confirm("¿Eliminar este vendedor?")) { setDeletingVendedorId(v.user_id); deleteVendedor(v.user_id); setDeletingVendedorId(null); } }}
                   disabled={deletingVendedorId === v.user_id}
-                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50">
+                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50"
+                  title="Eliminar vendedor">
                   {deletingVendedorId === v.user_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
               </div>
@@ -313,12 +317,14 @@ export default function GerenteDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => setEditingCliente(c)}
-                  className="p-2 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg transition-colors">
+                  className="p-2 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg transition-colors"
+                  title="Editar cliente">
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button onClick={() => { if (confirm("¿Eliminar este cliente?")) { setDeletingClienteId(c.user_id); deleteCliente(c.user_id); setDeletingClienteId(null); } }}
                   disabled={deletingClienteId === c.user_id}
-                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50">
+                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50"
+                  title="Eliminar cliente">
                   {deletingClienteId === c.user_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
               </div>
@@ -368,15 +374,33 @@ export default function GerenteDashboard() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {vault.uploadedImages.map((img) => (
-                  <div key={img.id} className="relative group rounded-2xl overflow-hidden shadow-soft">
-                    <img src={img.image_url} alt="Imagen subida" className="w-full h-40 object-cover" />
+                  <div key={img.id} className="relative group rounded-2xl overflow-hidden shadow-soft bg-card flex flex-col">
+                    <div className="flex w-full h-40">
+                      <div className="w-1/2 relative border-r border-border/50">
+                        <img src={img.image_url} alt="Original" className="w-full h-full object-cover" />
+                        <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 text-white text-[9px] font-bold rounded uppercase tracking-wider">Original</span>
+                      </div>
+                      <div className="w-1/2 relative bg-accent/5">
+                        {img.result_image_url ? (
+                          <>
+                            <img src={img.result_image_url} alt="Pintada" className="w-full h-full object-cover" />
+                            <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-accent text-accent-foreground text-[9px] font-bold rounded uppercase tracking-wider">Pintada</span>
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs text-center px-2">Sin resultado</div>
+                        )}
+                      </div>
+                    </div>
                     <button onClick={() => vault.removeImage(img.id)}
-                      className="absolute top-2 right-2 p-1.5 bg-destructive/90 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                      className="absolute top-2 right-2 p-1.5 bg-destructive/90 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-destructive shadow-md"
+                      title="Eliminar imagen">
                       <Trash2 className="w-4 h-4" />
                     </button>
-                    <p className="absolute bottom-0 left-0 right-0 p-2 bg-black/50 text-white text-xs">
-                      {new Date(img.created_at).toLocaleDateString()}
-                    </p>
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent pointer-events-none">
+                      <p className="text-white text-xs">
+                        {new Date(img.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -406,7 +430,8 @@ export default function GerenteDashboard() {
                       </div>
                     </div>
                     <button onClick={() => vault.removeImage(item.id)}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors">
+                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                      title="Eliminar pintura asignada">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
