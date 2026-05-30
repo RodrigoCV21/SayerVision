@@ -1,10 +1,10 @@
-# 🎨 Color Canvas AI — Guía de Ejecución Local
+# Color Canvas AI — Guía de Ejecución Local
 
 Esta guía explica paso a paso cómo correr el proyecto **Color Canvas AI** en tu computadora de forma local.
 
 ---
 
-## ✅ Requisitos Previos
+## Requisitos Previos
 
 Antes de comenzar, necesitas tener instalado lo siguiente:
 

@@ -8,6 +8,7 @@ import {
   ArrowLeft, LogOut, Boxes, ShoppingBag, Loader2,
   ChevronDown, ChevronUp, Search, UserCheck,
 } from "lucide-react";
+import { SayerVisionAILink } from "@/components/shared/SayerVisionAILink";
 import { toast } from "sonner";
 
 type VendedorView = "dashboard" | "consultar" | "asignar";
@@ -70,7 +71,7 @@ export default function VendedorDashboard() {
   const renderDashboard = () => (
     <div className="space-y-8">
       <h2 className="font-display text-3xl font-bold text-center">
-        Bienvenido, <span className="text-accent">(Vendedor)</span>
+        Bienvenido, <span className="text-accent">{user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : "Vendedor"}</span>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
         <button onClick={() => setActiveView("consultar")}
@@ -126,7 +127,9 @@ export default function VendedorDashboard() {
                   <Boxes className="w-5 h-5 text-accent" />
                   <div>
                     <p className="font-semibold">{product.name}</p>
-                    <p className="text-sm text-muted-foreground">{product.serie} — {product.category}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {product.serie} — {product.category} — <span className="font-semibold text-accent">${(product.price ?? 0).toFixed(2)}</span>
+                    </p>
                   </div>
                 </div>
                 {expandedProduct === product.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -138,6 +141,7 @@ export default function VendedorDashboard() {
                   {product.applicable_surfaces?.length > 0 && <p><strong>Superficies:</strong> {product.applicable_surfaces.join(", ")}</p>}
                   {product.environmental_conditions?.length > 0 && <p><strong>Condiciones:</strong> {product.environmental_conditions.join(", ")}</p>}
                   {product.precautions?.length > 0 && <p><strong>Precauciones:</strong> {product.precautions.join(", ")}</p>}
+                  <p><strong>Precio de venta:</strong> <span className="text-accent font-semibold">${(product.price ?? 0).toFixed(2)}</span></p>
                 </div>
               )}
             </div>
@@ -181,7 +185,7 @@ export default function VendedorDashboard() {
         <div className="pt-2 border-t border-border">
           <p className="text-sm text-muted-foreground mb-3">
             <UserCheck className="w-4 h-4 inline mr-1" />
-            Vendedor asignador: <strong>{user?.full_name || user?.email}</strong>
+            Vendedor asignado: <strong>{user?.full_name || user?.email}</strong>
           </p>
           <button onClick={handleAssign}
             disabled={!selectedClientId || !selectedProductId}
@@ -206,6 +210,9 @@ export default function VendedorDashboard() {
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
+          
+          <SayerVisionAILink />
+
           <button onClick={handleSignOut}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
             <LogOut className="w-4 h-4" /> Cerrar Sesión

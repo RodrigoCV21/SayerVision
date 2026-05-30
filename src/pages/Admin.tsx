@@ -7,6 +7,7 @@ import {
   Plus, Pencil, Trash2, ArrowLeft, Package, Loader2, 
   AlertTriangle, ChevronDown, ChevronUp, Users, Boxes, Mail, User
 } from "lucide-react";
+import { SayerVisionAILink } from "@/components/shared/SayerVisionAILink";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { GerenteForm } from "@/components/admin/GerenteForm";
 import { toast } from "sonner";
@@ -122,6 +123,9 @@ export default function Admin() {
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
+          
+          <SayerVisionAILink />
+
           <button
             onClick={handleSignOut}
             className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -135,7 +139,7 @@ export default function Admin() {
       {activeView === "dashboard" && (
         <main className="max-w-4xl mx-auto px-4 py-16 flex flex-col items-center">
           <h2 className="text-3xl font-display font-bold mb-12 text-center">
-            Bienvenido, <span className="text-accent">(Administrador)</span>
+            Bienvenido, <span className="text-accent">{user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : "Administrador"}</span>
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full max-w-lg">
@@ -272,6 +276,7 @@ export default function Admin() {
                                 setEditingProduct(product);
                               }}
                               className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                              title="Editar producto"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
@@ -283,6 +288,7 @@ export default function Admin() {
                               disabled={deletingId === product.id}
                               className="p-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors
                                        disabled:opacity-50"
+                              title="Eliminar producto"
                             >
                               {deletingId === product.id ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -291,9 +297,9 @@ export default function Admin() {
                               )}
                             </button>
                             {expandedProduct === product.id ? (
-                              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                              <ChevronUp className="w-5 h-5 text-muted-foreground" title="Contraer detalles" />
                             ) : (
-                              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                              <ChevronDown className="w-5 h-5 text-muted-foreground" title="Expandir detalles" />
                             )}
                           </div>
                         </div>

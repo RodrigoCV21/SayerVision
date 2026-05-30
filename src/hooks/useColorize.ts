@@ -11,6 +11,7 @@ interface Product {
   serie: string;
   description: string;
   category: string;
+  price?: number;
   features?: string[];
   applicable_surfaces?: string[];
   environmental_conditions?: string[];
@@ -20,6 +21,7 @@ interface Product {
     name: string;
     serie: string;
     description: string;
+    price?: number;
   };
 }
 
@@ -36,23 +38,9 @@ interface ColorizeResult {
   recommendations?: Recommendation[];
 }
 
-// Mapa de descripciones de color para enviar a la IA
-// Esto permite añadir colores nuevos sin redeploy de la Edge Function
-const COLOR_DESCRIPTIONS: Record<ColorOption, string> = {
-  "moss-green":     "Verde musgo — verde profundo y natural como el musgo del bosque, tono #4a6d4a",
-  "wine-red":       "Rojo vino — rojo intenso y elegante como el vino tinto, tono #8b3a3a",
-  "pastel-yellow":  "Amarillo pastel — amarillo suave y cálido, tono crema claro #e8d88a",
-  "primary-red":    "Rojo — rojo primario puro y vibrante, tono #CC2200",
-  "primary-blue":   "Azul — azul primario profundo, tono #1A3DAA",
-  "primary-yellow": "Amarillo — amarillo primario brillante, tono #F5C800",
-  "white":          "Blanco — blanco clásico para interiores y exteriores, tono #F5F5F0",
-  "black":          "Negro — negro profundo y elegante, tono #1A1A1A",
-  "gray":           "Gris — gris neutro versátil, tono #7A7A7A",
-  "beige":          "Beige — tono cálido y suave, tono #D4B896",
-  "orange":         "Naranja — naranja vibrante y energético, tono #E8630A",
-  "purple":         "Morado — morado profundo y sofisticado, tono #7B2D8B",
-  "sky-blue":       "Azul cielo — azul claro y fresco, tono #5EB8DD",
-};
+import { getColorHex } from "@/components/ColorPalette";
+
+// No longer using COLOR_DESCRIPTIONS map, we send Hex directly
 
 export function useColorize() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -64,15 +52,14 @@ export function useColorize() {
     imageBase64: string,
     surfaceInstruction: string,
     selectedColor: ColorOption
-  ): Promise<boolean> => {
+  ): Promise<string | null> => {
     setIsProcessing(true);
     setError(null);
     setResultImage(null);
     setRecommendations(null);
 
-    // Enviamos la descripción real del color en lugar del ID
-    // Así el backend acepta cualquier color sin necesitar redeploy
-    const colorDescription = COLOR_DESCRIPTIONS[selectedColor];
+    // Enviamos solo el valor hexadecimal para máxima precisión
+    const colorDescription = getColorHex(selectedColor);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke<ColorizeResult>(
@@ -81,10 +68,9 @@ export function useColorize() {
           body: {
             imageBase64,
             surfaceInstruction,
-            // Siempre un color válido para el backend actual
+            // Siempre un color base válido para el backend, el override hace el trabajo real
             selectedColor: "moss-green",
-            // Override con la descripción real del color elegido
-            colorDescriptionOverride: colorDescription,
+            colorDescriptionOverride: `Color Hexadecimal exacto: ${colorDescription}`,
           },
         }
       );
@@ -145,7 +131,8 @@ export function useColorize() {
                 id: primer.id,
                 name: primer.name,
                 serie: primer.serie || "",
-                description: primer.description || "Aplicar antes del producto principal"
+                description: primer.description || "Aplicar antes del producto principal",
+                price: primer.price ?? 0
               };
             }
           }
@@ -153,6 +140,7 @@ export function useColorize() {
           return {
             product: {
               ...product,
+              price: product.price ?? 0,
               requiresPrimer: primerInfo
             },
             surfaceDetected
@@ -160,14 +148,14 @@ export function useColorize() {
         });
 
         setRecommendations(finalRecommendations);
-        return true;
+        return data.imageUrl;
       }
 
       throw new Error("No se recibió una imagen del servidor");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error al procesar la imagen";
       setError(message);
-      return false;
+      return null;
     } finally {
       setIsProcessing(false);
     }

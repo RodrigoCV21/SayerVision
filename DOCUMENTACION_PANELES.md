@@ -2,6 +2,9 @@
 
 Este documento describe la implementación de los paneles de gestión para los tres roles operativos del sistema: **Gerente**, **Vendedor** y **Cliente**. Cada panel sigue el mismo patrón visual del Panel de Administrador (header + tarjetas de navegación + vistas CRUD internas).
 
+> [!TIP]
+> **Acceso Directo IA**: Todos los paneles incluyen ahora un botón **SayerVisionAI** en el header para acceder rápidamente a la herramienta de colorización desde cualquier vista.
+
 ---
 
 ## 📋 Resumen de Funcionalidades por Rol

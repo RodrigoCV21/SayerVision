@@ -20,10 +20,20 @@ export function UserForm({ roleName, initialData, onSubmit, onCancel }: UserForm
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
       newErrors.email = "El email es requerido";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Email inválido";
+    } else if (!trimmedEmail.includes("@")) {
+      newErrors.email = "El correo debe contener un '@'";
+    } else {
+      const parts = trimmedEmail.split("@");
+      if (parts[1].length === 0) {
+        newErrors.email = "Falta el dominio después del '@' (ej. gmail.com)";
+      } else if (!/^[^\s@]+\.[^\s@]+$/.test(parts[1])) {
+        newErrors.email = "El dominio ingresado no es válido";
+      } else if (!/^[^\s@]+$/.test(parts[0])) {
+        newErrors.email = "El nombre de usuario del correo no es válido";
+      }
     }
     if (!isEditing) {
       if (!password) {
